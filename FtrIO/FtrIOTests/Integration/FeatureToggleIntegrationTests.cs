@@ -1,4 +1,5 @@
-﻿using FtrIO.Classes;
+﻿using FtrIO;
+using FtrIO.Classes;
 using FtrIO.Enums;
 using FtrIO.Interfaces;
 using NUnit.Framework;
@@ -73,6 +74,16 @@ namespace FtrIOTests.Integration
 
             Assert.IsTrue(result);
         }
+        
+        [Test]
+        public void TestActionFakeMethodThatReturnsTrueWillReturnTrueIfConfigItemIsToggledToTrueWithReflection()
+        {
+            IFeatureToggle<bool> featureToggler = new FeatureToggle<bool>();
+
+            var result = FakeMethodThatReturnsTrue();
+
+            Assert.IsTrue(result);
+        }
 
         [Test]
         public void TestActionFakeMethodThatReturnsTrueWillReturnFalseIfConfigItemIsToggledToFalse()
@@ -83,7 +94,19 @@ namespace FtrIOTests.Integration
 
             Assert.IsFalse(result);
         }
+        
+        
+        [Test]
+        public void TestActionFakeMethodThatReturnsTrueWillReturnFalseIfConfigItemIsToggledToFalseWithReflection()
+        {
+            IFeatureToggle<bool> featureToggler = new FeatureToggle<bool>();
 
+            var result = featureToggler.ExecuteMethodIfToggleOn(FakeMethodThatReturnsTrue);
+
+            Assert.IsFalse(result);
+        }
+        
+        [Io(Enabled = false)]
         protected void FakeMethod(string keyName, out string changeMe)
         {
                 IToggleParser configParser = new ToggleParser();
@@ -97,6 +120,8 @@ namespace FtrIOTests.Integration
                 }
                 changeMe = "Unchanged";
         }
+        
+        [Io]
         protected bool FakeMethodThatReturnsTrue()
         {
             return true;
