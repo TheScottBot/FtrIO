@@ -1,9 +1,9 @@
-﻿using System.Diagnostics;
-
-namespace FtrIO.Classes
+﻿namespace FtrIO.Classes
 {
     using FtrIO.Enums;
     using FtrIO.Interfaces;
+    using System.Diagnostics;
+
     
     public class FeatureToggle<T> : IFeatureToggle<T>
     {
