@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using FtrIO.Classes;
-
-namespace FtrIO
+﻿namespace FtrIO
 {
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
     public class IoAttribute : Attribute

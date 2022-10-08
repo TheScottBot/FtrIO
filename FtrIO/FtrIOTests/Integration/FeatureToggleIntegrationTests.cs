@@ -1,12 +1,12 @@
-﻿using FtrIO;
-using FtrIO.Classes;
-using FtrIO.Enums;
-using FtrIO.Interfaces;
-using NUnit.Framework;
-using ToggleExceptions;
-
-namespace FtrIOTests.Integration
+﻿namespace FtrIOTests.Integration
 {
+    using FtrIO;
+    using FtrIO.Classes;
+    using FtrIO.Enums;
+    using FtrIO.Interfaces;
+    using NUnit.Framework;
+    using ToggleExceptions;
+    
     public class FeatureToggleIntegrationTests
     {
         [Test]
