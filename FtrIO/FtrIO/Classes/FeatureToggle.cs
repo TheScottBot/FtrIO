@@ -1,18 +1,35 @@
-﻿namespace FtrIO.Classes
+﻿using System.Diagnostics;
+
+namespace FtrIO.Classes
 {
     using FtrIO.Enums;
     using FtrIO.Interfaces;
     
     public class FeatureToggle<T> : IFeatureToggle<T>
     {
+        public FeatureToggle()
+        {
+            var sss = (IoAttribute[])typeof(FeatureToggle<T>).GetCustomAttributes(typeof(IoAttribute), true);
+        }
+        [Io]
         private ToggleStatus Status(bool active)
         {
             return active ? ToggleStatus.Active : ToggleStatus.Inactive;
         }
 
-        public ToggleStatus GetToggleState(IToggleParser parser, string toggleKey)
+        public ToggleStatus GetToggleState(IToggleParser parser, string? toggleKey = null)
         {
-            return Status(parser.GetToggleStatus(toggleKey));
+            string key;
+            if (string.IsNullOrEmpty(toggleKey))
+            {
+                var stack = new StackTrace(new StackFrame(3));
+                key = stack.GetFrame(0).GetMethod().Name;
+            }
+            else
+            {
+                key = toggleKey;
+            }
+            return Status(parser.GetToggleStatus(key));
         }
 
 
@@ -36,7 +53,7 @@
             IToggleParser configParser = new ToggleParser();
             return ExecuteMethodIfToggleOn(methodToRun, configParser, keyName);
         }
-
+        
         public T ExecuteMethodIfToggleOn(Func<T> methodToRun, IToggleParser configParser, string keyName)
         {
             var response = GetToggleState(configParser, keyName);
