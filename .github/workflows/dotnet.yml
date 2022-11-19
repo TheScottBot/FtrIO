@@ -16,16 +16,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Change directory
-      run: cd FtrIO/FtrIO
-    - name: dir
-      run: ls
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore .\FtrIO
     - name: Build
       run: dotnet build --no-restore
     - name: Test
