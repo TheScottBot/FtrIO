@@ -21,8 +21,8 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      run: ls; cd FtrIO; ls; dotnet restore
+      run: cd FtrIO; dotnet restore
     - name: Build
-      run: dotnet build --no-restore
+      run: cd FtrIO; ls; dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: cd FtrIO; ls; dotnet test --no-build --verbosity normal
