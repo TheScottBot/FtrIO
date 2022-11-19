@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Change directory
-      run: cd FtrIO
+      run: cd FtrIO/FtrIO
     - name: dir
       run: ls
     - name: Setup .NET
