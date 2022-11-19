@@ -23,6 +23,6 @@ jobs:
     - name: Restore dependencies
       run: cd FtrIO; dotnet restore
     - name: Build
-      run: cd FtrIO; ls; dotnet build --no-restore
+      run: cd FtrIO; dotnet build --no-restore
     - name: Test
-      run: cd FtrIO; ls; dotnet test --no-build --verbosity normal
+      run: cd FtrIO; dotnet test --no-build --verbosity normal
