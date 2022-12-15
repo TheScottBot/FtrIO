@@ -9,7 +9,6 @@
         {
             this.MethodName = string.Empty;
             this.Enabled = false;
-            k
         }
 
     }
