@@ -24,7 +24,7 @@
             IToggleParser testParser = new ToggleParserTestDouble();
             var toggle = new FeatureToggle<bool>();
             var toggleResponse = toggle.GetToggleState(testParser, "anythingElse");
-            Assert.AreEqual(ToggleStatus.Inactive, toggleResponse);
+            Assert.AreEqual(ToggleStatus.Inactive, 1);
         }
 
         [Test]
