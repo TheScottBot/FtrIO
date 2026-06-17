@@ -74,16 +74,6 @@
 
             Assert.IsTrue(result);
         }
-        
-        [Test]
-        public void TestActionFakeMethodThatReturnsTrueWillReturnTrueIfConfigItemIsToggledToTrueWithReflection()
-        {
-            IFeatureToggle<bool> featureToggler = new FeatureToggle<bool>();
-
-            var result = FakeMethodThatReturnsTrue();
-
-            Assert.IsTrue(result);
-        }
 
         [Test]
         public void TestActionFakeMethodThatReturnsTrueWillReturnFalseIfConfigItemIsToggledToFalse()
@@ -94,19 +84,57 @@
 
             Assert.IsFalse(result);
         }
-        
-        
+
         [Test]
-        public void TestActionFakeMethodThatReturnsTrueWillReturnFalseIfConfigItemIsToggledToFalseWithReflection()
+        public void TestExecuteMethodIfToggleOnReturnsTrueWhenToggleAttributeMethodIsToggledOn()
         {
             IFeatureToggle<bool> featureToggler = new FeatureToggle<bool>();
 
             var result = featureToggler.ExecuteMethodIfToggleOn(FakeMethodThatReturnsTrue);
 
+            Assert.IsTrue(result);
+        }
+
+        [Test]
+        public void TestExecuteMethodIfToggleOnThrowsWhenMethodHasNoToggleAttributeAndNoKeyNameProvided()
+        {
+            IFeatureToggle<bool> featureToggler = new FeatureToggle<bool>();
+
+            Assert.Throws<ToggleAttributeMissingException>(() => featureToggler.ExecuteMethodIfToggleOn(FakeMethodWithNoToggleAttribute));
+        }
+
+        [Test]
+        public void TestDirectCallToToggleDecoratedMethodRunsWhenToggledOn()
+        {
+            // No FeatureToggle/ExecuteMethodIfToggleOn involved at all here -
+            // this calls the [Toggle]-decorated method directly to prove the
+            // AspectInjector-woven gating is what's deciding the outcome.
+            var result = FakeAutoGatedMethodToggledOn();
+
+            Assert.IsTrue(result);
+        }
+
+        [Test]
+        public void TestDirectCallToToggleDecoratedMethodIsSkippedWhenToggledOff()
+        {
+            // The method body always returns true, but config says this
+            // toggle is off, so a direct call should never reach the body
+            // and should come back with default(bool) (false) instead.
+            var result = FakeAutoGatedMethodToggledOff();
+
             Assert.IsFalse(result);
         }
-        
-        [Io(Enabled = false)]
+
+        [Test]
+        public void TestDirectCallToToggleDecoratedVoidMethodIsSkippedWhenToggledOff()
+        {
+            _voidMethodRan = false;
+
+            FakeAutoGatedVoidMethodToggledOff();
+
+            Assert.IsFalse(_voidMethodRan);
+        }
+
         protected void FakeMethod(string keyName, out string changeMe)
         {
                 IToggleParser configParser = new ToggleParser();
@@ -120,11 +148,36 @@
                 }
                 changeMe = "Unchanged";
         }
-        
-        [Io]
+
+        [Toggle]
         protected bool FakeMethodThatReturnsTrue()
         {
             return true;
+        }
+
+        protected bool FakeMethodWithNoToggleAttribute()
+        {
+            return true;
+        }
+
+        private bool _voidMethodRan;
+
+        [Toggle]
+        protected bool FakeAutoGatedMethodToggledOn()
+        {
+            return true;
+        }
+
+        [Toggle]
+        protected bool FakeAutoGatedMethodToggledOff()
+        {
+            return true;
+        }
+
+        [Toggle]
+        protected void FakeAutoGatedVoidMethodToggledOff()
+        {
+            _voidMethodRan = true;
         }
     }
 }
