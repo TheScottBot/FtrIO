@@ -4,6 +4,14 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        <PackageId>FtrIO.ToggleExceptions</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>TheScottBot</Authors>
+        <Description>Exception types for the FtrIO feature-toggle library.</Description>
+        <PackageTags>feature-toggle;feature-flag;toggle</PackageTags>
+        <RepositoryUrl>https://github.com/TheScottBot/FtrIO</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
 </Project>
