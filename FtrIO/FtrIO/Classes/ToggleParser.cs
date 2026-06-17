@@ -9,9 +9,9 @@
         private readonly bool _configFileExists;
         private readonly IConfigurationSection _toggles;
 
-        public ToggleParser()
+        public ToggleParser(string? basePath = null)
         {
-            var basePath = AppContext.BaseDirectory;
+            basePath ??= AppContext.BaseDirectory;
             _configFileExists = File.Exists(Path.Combine(basePath, "appsettings.json"));
 
             if (_configFileExists)
