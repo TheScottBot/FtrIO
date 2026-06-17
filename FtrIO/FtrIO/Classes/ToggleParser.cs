@@ -1,33 +1,43 @@
 ﻿namespace FtrIO.Classes
 {
+    using System.IO;
     using ToggleExceptions;
     using FtrIO.Interfaces;
     using Microsoft.Extensions.Configuration;
     public class ToggleParser : IToggleParser
     {
+        private readonly bool _configFileExists;
         private readonly IConfigurationSection _toggles;
 
         public ToggleParser()
         {
-            if (ToggleConfigTagExists())
+            var basePath = AppContext.BaseDirectory;
+            _configFileExists = File.Exists(Path.Combine(basePath, "appsettings.json"));
+
+            if (_configFileExists)
             {
-                _toggles = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build().GetSection("Toggles");
+                _toggles = new ConfigurationBuilder().SetBasePath(basePath).AddJsonFile("appsettings.json", optional: true).Build().GetSection("Toggles");
             }
         }
 
         public bool ToggleConfigTagExists()
         {
-            var toggleSection = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build().GetSection("Toggles");
-            return toggleSection != null;
+            return _configFileExists;
         }
 
         public bool GetToggleStatus(string toggle)
         {
+            if (!_configFileExists)
+            {
+                // No appsettings.json on disk at all, so nothing has been
+                // explicitly toggled off - everything should run.
+                return true;
+            }
+
             if (_toggles[toggle] == null)
             {
                 throw new ToggleDoesNotExistException();
             }
-
 
             return ParseBoolValueFromSource(_toggles[toggle]);
         }
@@ -46,8 +56,6 @@
             {
                 throw new ToggleParsedOutOfRangeException();
             }
-
-            throw new ToggleDoesNotExistException();
         }
     }
 }
