@@ -40,23 +40,18 @@
         [Test]
         public void TestEverythingIsTreatedAsOnWhenAppSettingsFileIsMissing()
         {
-            var originalDirectory = Directory.GetCurrentDirectory();
             var tempDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(tempDirectory);
 
             try
             {
-                // No appsettings.json exists in this brand new directory.
-                Directory.SetCurrentDirectory(tempDirectory);
-
-                var configParser = new ToggleParser();
+                var configParser = new ToggleParser(tempDirectory);
 
                 Assert.IsFalse(configParser.ToggleConfigTagExists());
                 Assert.IsTrue(configParser.GetToggleStatus("SomeMadeUpToggleThatHasNeverExisted"));
             }
             finally
             {
-                Directory.SetCurrentDirectory(originalDirectory);
                 Directory.Delete(tempDirectory, recursive: true);
             }
         }
