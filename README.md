@@ -86,6 +86,26 @@ catch (ToggleAttributeMissingException)
 }
 ```
 
+## Deploying `appsettings.json`
+
+FtrIO's default config parser looks for `appsettings.json` in the application's output directory at runtime (`AppContext.BaseDirectory`). You need to make sure the file ends up there — it won't be copied automatically unless you tell the build system to do so.
+
+**Local development** — mark the file as copy-to-output in your `.csproj`:
+
+```xml
+<ItemGroup>
+  <None Update="appsettings.json">
+    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+  </None>
+</ItemGroup>
+```
+
+`Always` re-copies on every build. Use `PreserveNewest` if you'd rather only copy when the file has changed.
+
+**Build servers / CI** — the same `.csproj` entry handles this automatically as part of `dotnet build`, so no extra steps are needed as long as `appsettings.json` is committed to the repository and the `CopyToOutputDirectory` entry is in place. If you manage config separately (environment-specific files, secrets managers, etc.) and inject `appsettings.json` at deploy time rather than build time, make sure it lands in the same directory as the compiled output before the application starts.
+
+This only applies if you are using FtrIO's built-in `ToggleParser`. If you implement `IToggleParser` yourself, config loading is entirely your responsibility and the above doesn't apply.
+
 ## `appsettings.json` is optional
 
 `appsettings.json` doesn't have to exist. If it's missing entirely, nothing has been explicitly toggled off, so every `[Toggle]`-decorated method and every `ExecuteMethodIfToggleOn` call runs normally - `GetToggleStatus` returns `true` for any key in that case.
