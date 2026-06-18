@@ -1,6 +1,7 @@
 ![FtrIO](assets/ftrio-banner.png)
 
 [![NuGet](https://img.shields.io/nuget/v/FtrIO?color=ff69b4&logo=nuget)](https://www.nuget.org/packages/FtrIO)
+[![Docs](https://img.shields.io/badge/docs-ftrio-ff69b4)](https://TheScottBot.github.io/FtrIO/)
 
 # FtrIO
 
