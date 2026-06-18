@@ -5,4 +5,5 @@ FtrIO/.idea/.idea.FtrIO/.idea/encodings.xml
 *.user
 *bin*
 *obj*
+*nupkgs*
 
