@@ -33,7 +33,7 @@ jobs:
         run: |
           VERSION="${{ github.event.release.tag_name }}"
           VERSION="${VERSION#v}"
-          cd FtrIO; dotnet pack FtrIO/FtrIO.csproj --no-build --configuration Release -p:PackageVersion=$VERSION --output ./nupkgs
+          dotnet pack FtrIO/FtrIO/FtrIO.csproj --no-build --configuration Release -p:PackageVersion=$VERSION --output FtrIO/nupkgs
 
       - name: Get NuGet OIDC token
         id: oidc
