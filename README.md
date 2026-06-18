@@ -33,6 +33,22 @@ in its own `.csproj`. Without it, `[Toggle]` on a method in that project is just
 
 If a method is both decorated with `[Toggle]` *and* called via `ExecuteMethodIfToggleOn` with an explicit `keyName`, both checks apply: the explicit key controls whether the call site invokes the method at all, and the method's own woven check (based on its own name) still applies once it runs. In practice both checks should agree, since they'd typically reference related config entries - but it's worth knowing that the explicit key is no longer a way to "override" a `[Toggle]`-decorated method's self-gating once AspectInjector is in play for that project.
 
+## Compile-time validation
+
+FtrIO ships a Roslyn analyzer that catches missing config entries at build time rather than at runtime. If you register your `appsettings.json` as an `AdditionalFile`, any `[Toggle]`-decorated method whose name has no matching entry in the `Toggles` section will produce a compiler error (`FTRIO001`) — the build fails rather than the method silently misbehaving at runtime.
+
+To opt in, add this to your `.csproj`:
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="appsettings.json" />
+</ItemGroup>
+```
+
+Without this line the analyzer is silent — the runtime behaviour is unchanged and missing keys still throw `ToggleDoesNotExistException` at runtime as normal.
+
+The analyzer is included automatically when you reference the `FtrIO` NuGet package; no separate package is needed.
+
 ## `appsettings.json` is optional
 
 `appsettings.json` doesn't have to exist. If it's missing entirely, nothing has been explicitly toggled off, so every `[Toggle]`-decorated method and every `ExecuteMethodIfToggleOn` call runs normally - `GetToggleStatus` returns `true` for any key in that case.
