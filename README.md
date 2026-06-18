@@ -8,6 +8,12 @@ FtrIO == Feature I/O
 
 Code to enable toggling logic without needing to wrap anything in "if" statements or anything else
 
+## Installation
+
+```bash
+dotnet add package FtrIO
+```
+
 ## The `[Toggle]` attribute
 
 Decorate a method with `[Toggle]` and it becomes gated by its own name against the `Toggles` section of `appsettings.json` - no `if` statement, and no need to route the call through anything else.
