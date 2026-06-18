@@ -1,3 +1,5 @@
+![FtrIO](assets/ftrio-banner.png)
+
 # FtrIO
 
 FtrIO == Feature I/O
