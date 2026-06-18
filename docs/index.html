@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FtrIO — .NET Feature Toggles</title>
+  <meta name="description" content="FtrIO is a .NET feature-toggle library. Gate method execution via appsettings.json — no if statements, no boilerplate." />
+  <link rel="icon" type="image/png" href="assets/ftrio-icon-128.png" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #ff69b4;
+      --accent-dim: rgba(255, 105, 180, 0.15);
+      --code-bg: #1f2937;
+      --radius: 8px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      background: rgba(13,17,23,0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      z-index: 100;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--text); }
+    .nav-logo img { height: 28px; }
+    .nav-links { display: flex; gap: 1.5rem; font-size: 0.9rem; color: var(--muted); }
+    .nav-links a { color: var(--muted); }
+    .nav-links a:hover { color: var(--text); }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 5rem 2rem 4rem;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .hero img.banner {
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 2rem;
+    }
+    .hero h1 {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #e6edf3 30%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 520px;
+      margin: 0 auto 2rem;
+    }
+    .hero-badges { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2.5rem; }
+    .hero-ctas { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.6rem 1.3rem;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: opacity .15s;
+    }
+    .btn:hover { opacity: 0.85; text-decoration: none; }
+    .btn-primary { background: var(--accent); color: #0d1117; }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+    /* INSTALL */
+    .install-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.9rem 1.2rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 0 auto 2.5rem;
+    }
+    .install-block code {
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.95rem;
+      color: var(--accent);
+    }
+    .copy-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      padding: 0.2rem 0.55rem;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .copy-btn:hover { color: var(--text); border-color: var(--text); }
+
+    /* MAIN LAYOUT */
+    main { max-width: 900px; margin: 0 auto; padding: 0 2rem 6rem; }
+
+    /* SECTIONS */
+    section { margin-bottom: 4rem; }
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    h2 .icon { font-size: 1.2rem; }
+    h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.6rem; color: var(--text); }
+
+    p { color: var(--muted); margin-bottom: 0.9rem; }
+    p strong { color: var(--text); }
+
+    /* CODE */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.3rem;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+    pre code {
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.88rem;
+      line-height: 1.7;
+      color: var(--text);
+    }
+    code { font-family: "SF Mono", "Fira Code", Consolas, monospace; }
+    p code, li code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1em 0.4em;
+      font-size: 0.85em;
+      color: var(--accent);
+    }
+
+    /* FEATURE GRID */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.35rem;
+      transition: border-color .2s;
+    }
+    .feature-card:hover { border-color: var(--accent); }
+    .feature-card .emoji { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
+    .feature-card h3 { margin: 0 0 0.4rem; font-size: 0.95rem; color: var(--text); }
+    .feature-card p { font-size: 0.875rem; margin: 0; }
+
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.9rem; }
+    th {
+      text-align: left;
+      padding: 0.6rem 1rem;
+      background: var(--surface);
+      color: var(--muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+    td code { color: var(--accent); }
+    td:first-child { color: var(--text); font-weight: 500; }
+    tr:last-child td { border-bottom: none; }
+
+    /* TFM BADGES */
+    .tfm-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+    .tfm-badge {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 20px;
+      padding: 0.2rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* NOTE */
+    .note {
+      background: var(--accent-dim);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 0.85rem 1.1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .note strong { color: var(--text); }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--text); }
+
+    /* Syntax highlight helpers */
+    .kw  { color: #ff79c6; }
+    .cm  { color: #6272a4; font-style: italic; }
+    .st  { color: #f1fa8c; }
+    .at  { color: #50fa7b; }
+    .ty  { color: #8be9fd; }
+    .nm  { color: #e6edf3; }
+    .pu  { color: #e6edf3; }
+    .xml-tag  { color: #ff79c6; }
+    .xml-attr { color: #50fa7b; }
+    .xml-val  { color: #f1fa8c; }
+    .xml-cm   { color: #6272a4; font-style: italic; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">
+    <img src="assets/ftrio-icon-128.png" alt="FtrIO" />
+    FtrIO
+  </span>
+  <div class="nav-links">
+    <a href="#quickstart">Quick start</a>
+    <a href="#analyzer">Analyzer</a>
+    <a href="#exceptions">Exceptions</a>
+    <a href="https://github.com/TheScottBot/FtrIO">GitHub</a>
+    <a href="https://www.nuget.org/packages/FtrIO">NuGet</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <img class="banner" src="assets/ftrio-banner.png" alt="FtrIO banner" />
+  <h1>Feature Toggles for .NET</h1>
+  <p>Gate method execution via <code>appsettings.json</code> — one attribute, no <code>if</code> statements, no boilerplate.</p>
+
+  <div class="hero-badges">
+    <a href="https://www.nuget.org/packages/FtrIO">
+      <img src="https://img.shields.io/nuget/v/FtrIO?color=ff69b4&logo=nuget" alt="NuGet version" />
+    </a>
+    <a href="https://github.com/TheScottBot/FtrIO/actions">
+      <img src="https://github.com/TheScottBot/FtrIO/actions/workflows/dotnet.yml/badge.svg" alt="CI" />
+    </a>
+    <img src="https://img.shields.io/badge/license-MIT-blue" alt="License" />
+  </div>
+
+  <div class="install-block">
+    <code>dotnet add package FtrIO</code>
+    <button class="copy-btn" onclick="copyInstall(this)">copy</button>
+  </div>
+
+  <div class="hero-ctas">
+    <a class="btn btn-primary" href="#quickstart">Get started</a>
+    <a class="btn btn-secondary" href="https://github.com/TheScottBot/FtrIO">View on GitHub</a>
+  </div>
+</div>
+
+<main>
+
+  <!-- FEATURES -->
+  <section>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="emoji">🎛️</span>
+        <h3>Attribute-driven</h3>
+        <p>Decorate any method with <code>[Toggle]</code> and it becomes config-gated automatically.</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🔍</span>
+        <h3>Compile-time safety</h3>
+        <p>The bundled Roslyn analyzer catches missing config entries at build time, not at runtime.</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">📦</span>
+        <h3>Zero boilerplate</h3>
+        <p>No wrapper classes, no service registrations, no <code>if</code> statements around every call site.</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🎯</span>
+        <h3>Multi-target</h3>
+        <p>Ships TFMs for .NET 6, 7, 8, 9 and 10 in one package.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUICK START -->
+  <section id="quickstart">
+    <h2><span class="icon">🚀</span> Quick start</h2>
+
+    <h3>1. Install the package</h3>
+    <pre><code>dotnet add package FtrIO</code></pre>
+
+    <h3>2. Add AspectInjector to your consuming project</h3>
+    <p>AspectInjector weaves <code>[Toggle]</code> IL at compile time, per project. Any project that decorates its own methods needs this:</p>
+    <pre><code><span class="xml-tag">&lt;PackageReference</span> <span class="xml-attr">Include</span>=<span class="xml-val">"AspectInjector"</span> <span class="xml-attr">Version</span>=<span class="xml-val">"2.9.0"</span> <span class="xml-tag">/&gt;</span></code></pre>
+
+    <h3>3. Create <code>appsettings.json</code></h3>
+    <pre><code>{
+  <span class="st">"Toggles"</span>: {
+    <span class="st">"SendWelcomeEmail"</span>: <span class="kw">true</span>,
+    <span class="st">"NewCheckoutFlow"</span>: <span class="kw">false</span>
+  }
+}</code></pre>
+
+    <h3>4. Copy it to the build output</h3>
+    <pre><code><span class="xml-tag">&lt;ItemGroup&gt;</span>
+  <span class="xml-tag">&lt;None</span> <span class="xml-attr">Update</span>=<span class="xml-val">"appsettings.json"</span><span class="xml-tag">&gt;</span>
+    <span class="xml-tag">&lt;CopyToOutputDirectory&gt;</span>Always<span class="xml-tag">&lt;/CopyToOutputDirectory&gt;</span>
+  <span class="xml-tag">&lt;/None&gt;</span>
+<span class="xml-tag">&lt;/ItemGroup&gt;</span></code></pre>
+
+    <h3>5. Decorate and call</h3>
+    <pre><code><span class="kw">using</span> <span class="nm">FtrIO</span><span class="pu">;</span>
+
+<span class="kw">public class</span> <span class="ty">EmailService</span>
+<span class="pu">{</span>
+    <span class="at">[Toggle]</span>
+    <span class="kw">public void</span> <span class="nm">SendWelcomeEmail</span><span class="pu">()</span>
+    <span class="pu">{</span>
+        <span class="cm">// runs only when "SendWelcomeEmail": true in config</span>
+    <span class="pu">}</span>
+<span class="pu">}</span></code></pre>
+
+    <p>Call it like any normal method — FtrIO intercepts the call via IL weaving and checks the config before the body runs. No <code>if</code>, no wrapper, nothing extra at the call site.</p>
+
+    <div class="note">
+      <strong>Local functions won't work.</strong> The compiler name-mangles them (e.g. <code>&lt;&lt;Main&gt;$&gt;g__MyFunc|0_0</code>), so name-based config resolution fails. Use real named methods on a class instead.
+    </div>
+  </section>
+
+  <!-- TARGETS -->
+  <section>
+    <h2><span class="icon">🎯</span> Target frameworks</h2>
+    <p>One NuGet package, five targets:</p>
+    <div class="tfm-row">
+      <span class="tfm-badge">.NET 6</span>
+      <span class="tfm-badge">.NET 7</span>
+      <span class="tfm-badge">.NET 8</span>
+      <span class="tfm-badge">.NET 9</span>
+      <span class="tfm-badge">.NET 10</span>
+    </div>
+  </section>
+
+  <!-- ANALYZER -->
+  <section id="analyzer">
+    <h2><span class="icon">🔍</span> Compile-time validation</h2>
+    <p>FtrIO ships a Roslyn analyzer (<strong>FTRIO001</strong>) that catches missing config entries at build time. If you register your <code>appsettings.json</code> as an <code>AdditionalFile</code>, any <code>[Toggle]</code>-decorated method whose name has no matching entry in <code>Toggles</code> produces a compiler error — the build fails rather than the method misbehaving silently at runtime.</p>
+
+    <h3>Opt in</h3>
+    <pre><code><span class="xml-tag">&lt;ItemGroup&gt;</span>
+  <span class="xml-tag">&lt;AdditionalFiles</span> <span class="xml-attr">Include</span>=<span class="xml-val">"appsettings.json"</span> <span class="xml-tag">/&gt;</span>
+<span class="xml-tag">&lt;/ItemGroup&gt;</span></code></pre>
+
+    <p>Without this line the analyzer is silent — runtime behaviour is unchanged. The analyzer is included automatically with the NuGet package; no separate install is needed.</p>
+
+    <h3>Example</h3>
+    <pre><code><span class="xml-tag">&lt;!--</span> <span class="xml-cm">appsettings.json has Toggles.SendWelcomeEmail but not Toggles.NewCheckoutFlow</span> <span class="xml-tag">--&gt;</span>
+
+<span class="at">[Toggle]</span> <span class="kw">public void</span> <span class="nm">SendWelcomeEmail</span><span class="pu">()</span> <span class="pu">{}</span>  <span class="cm">// ✓ fine</span>
+<span class="at">[Toggle]</span> <span class="kw">public void</span> <span class="nm">NewCheckoutFlow</span><span class="pu">()</span>  <span class="pu">{}</span>  <span class="cm">// ✗ FTRIO001: 'NewCheckoutFlow' has no entry in Toggles</span></code></pre>
+  </section>
+
+  <!-- MANUAL CONTROL -->
+  <section>
+    <h2><span class="icon">🎮</span> Manual control</h2>
+    <p><code>ExecuteMethodIfToggleOn</code> is available when you want explicit control — passing a key name override, gating a lambda, or gating a method you can't decorate:</p>
+    <pre><code><span class="kw">var</span> <span class="nm">toggle</span> <span class="pu">=</span> <span class="kw">new</span> <span class="ty">FeatureToggle</span><span class="pu">&lt;</span><span class="ty">EmailService</span><span class="pu">&gt;(</span><span class="kw">new</span> <span class="ty">EmailService</span><span class="pu">());</span>
+
+<span class="cm">// Key resolved from method name via [Toggle] attribute</span>
+<span class="nm">toggle</span><span class="pu">.</span><span class="nm">ExecuteMethodIfToggleOn</span><span class="pu">(</span><span class="nm">svc</span> <span class="pu">=&gt;</span> <span class="nm">svc</span><span class="pu">.</span><span class="nm">SendWelcomeEmail</span><span class="pu">());</span>
+
+<span class="cm">// Explicit key override</span>
+<span class="nm">toggle</span><span class="pu">.</span><span class="nm">ExecuteMethodIfToggleOn</span><span class="pu">(</span><span class="nm">svc</span> <span class="pu">=&gt;</span> <span class="nm">svc</span><span class="pu">.</span><span class="nm">SendWelcomeEmail</span><span class="pu">(),</span> <span class="st">"MyCustomKey"</span><span class="pu">);</span></code></pre>
+  </section>
+
+  <!-- EXCEPTIONS -->
+  <section id="exceptions">
+    <h2><span class="icon">⚠️</span> Exceptions</h2>
+    <p>All exceptions live in the <code>ToggleExceptions</code> namespace:</p>
+
+    <table>
+      <thead>
+        <tr><th>Exception</th><th>When it's thrown</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ToggleDoesNotExistException</code></td>
+          <td><code>appsettings.json</code> exists but has no entry for the requested key in the <code>Toggles</code> section.</td>
+        </tr>
+        <tr>
+          <td><code>ToggleParsedOutOfRangeException</code></td>
+          <td>A <code>Toggles</code> entry exists but its value isn't parseable as a boolean (<code>true</code> / <code>false</code> / <code>1</code> / <code>0</code>).</td>
+        </tr>
+        <tr>
+          <td><code>ToggleAttributeMissingException</code></td>
+          <td><code>ExecuteMethodIfToggleOn</code> is called without an explicit key and the method has no <code>[Toggle]</code> attribute to fall back on.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <pre><code><span class="kw">using</span> <span class="nm">ToggleExceptions</span><span class="pu">;</span>
+
+<span class="kw">try</span>
+<span class="pu">{</span>
+    <span class="nm">emailService</span><span class="pu">.</span><span class="nm">SendWelcomeEmail</span><span class="pu">();</span>
+<span class="pu">}</span>
+<span class="kw">catch</span> <span class="pu">(</span><span class="ty">ToggleDoesNotExistException</span><span class="pu">)</span>
+<span class="pu">{</span>
+    <span class="cm">// "SendWelcomeEmail" key is missing from appsettings.json</span>
+<span class="pu">}</span>
+<span class="kw">catch</span> <span class="pu">(</span><span class="ty">ToggleParsedOutOfRangeException</span><span class="pu">)</span>
+<span class="pu">{</span>
+    <span class="cm">// The value isn't true/false/1/0</span>
+<span class="pu">}</span></code></pre>
+  </section>
+
+  <!-- OPTIONAL CONFIG -->
+  <section>
+    <h2><span class="icon">📄</span> Optional config</h2>
+    <p><code>appsettings.json</code> is entirely optional. If the file is absent, every toggle is treated as <strong>on</strong> — nothing is gated off. This means you can ship without a config file and nothing breaks.</p>
+    <p>If the file <em>exists</em> but is missing a <code>Toggles</code> key for a specific method, that throws <code>ToggleDoesNotExistException</code> — a present-but-incomplete config is treated as a mistake worth surfacing.</p>
+  </section>
+
+</main>
+
+<footer>
+  <p>
+    Built by <a href="https://github.com/TheScottBot">TheScottBot</a> &nbsp;·&nbsp;
+    <a href="https://github.com/TheScottBot/FtrIO">GitHub</a> &nbsp;·&nbsp;
+    <a href="https://www.nuget.org/packages/FtrIO">NuGet</a> &nbsp;·&nbsp;
+    <a href="https://github.com/TheScottBot/FtrIO/blob/main/LICENSE">MIT License</a>
+  </p>
+</footer>
+
+<script>
+  function copyInstall(btn) {
+    navigator.clipboard.writeText('dotnet add package FtrIO').then(() => {
+      btn.textContent = 'copied!';
+      setTimeout(() => { btn.textContent = 'copy'; }, 1800);
+    });
+  }
+</script>
+
+</body>
+</html>
