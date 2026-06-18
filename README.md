@@ -49,6 +49,43 @@ Without this line the analyzer is silent — the runtime behaviour is unchanged 
 
 The analyzer is included automatically when you reference the `FtrIO` NuGet package; no separate package is needed.
 
+## Exceptions
+
+All exceptions are in the `ToggleExceptions` namespace.
+
+```csharp
+using ToggleExceptions;
+```
+
+| Exception | When it's thrown |
+|-----------|-----------------|
+| `ToggleDoesNotExistException` | `appsettings.json` exists but has no entry for the requested key in the `Toggles` section |
+| `ToggleParsedOutOfRangeException` | A `Toggles` entry exists but its value isn't parseable as a boolean (`true`/`false`/`1`/`0`) |
+| `ToggleAttributeMissingException` | `ExecuteMethodIfToggleOn` is called without an explicit `keyName` and the method has no `[Toggle]` attribute to fall back on |
+
+Example handling:
+
+```csharp
+using ToggleExceptions;
+
+try
+{
+    featureToggle.ExecuteMethodIfToggleOn(MyMethod);
+}
+catch (ToggleDoesNotExistException)
+{
+    // "MyMethod" key is missing from appsettings.json
+}
+catch (ToggleParsedOutOfRangeException)
+{
+    // The value for "MyMethod" in appsettings.json isn't true/false/1/0
+}
+catch (ToggleAttributeMissingException)
+{
+    // MyMethod has no [Toggle] attribute and no keyName was passed
+}
+```
+
 ## `appsettings.json` is optional
 
 `appsettings.json` doesn't have to exist. If it's missing entirely, nothing has been explicitly toggled off, so every `[Toggle]`-decorated method and every `ExecuteMethodIfToggleOn` call runs normally - `GetToggleStatus` returns `true` for any key in that case.
