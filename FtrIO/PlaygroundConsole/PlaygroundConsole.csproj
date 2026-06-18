@@ -9,6 +9,9 @@
 
     <ItemGroup>
       <ProjectReference Include="..\FtrIO\FtrIO.csproj" />
+      <ProjectReference Include="..\FtrIO.Analyzers\FtrIO.Analyzers.csproj"
+                        ReferenceOutputAssembly="false"
+                        OutputItemType="Analyzer" />
       <PackageReference Include="AspectInjector" Version="2.9.0" />
     </ItemGroup>
 
@@ -16,6 +19,7 @@
       <None Update="appsettings.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <AdditionalFiles Include="appsettings.json" />
     </ItemGroup>
 
 </Project>
