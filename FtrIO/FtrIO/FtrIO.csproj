@@ -13,6 +13,7 @@
         <RepositoryUrl>https://github.com/TheScottBot/FtrIO</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -33,6 +34,9 @@
             PackagePath="analyzers/dotnet/cs"
             Visible="false" />
       <None Include="..\..\README.md"
+            Pack="true"
+            PackagePath="\" />
+      <None Include="..\..\LICENSE"
             Pack="true"
             PackagePath="\" />
     </ItemGroup>
