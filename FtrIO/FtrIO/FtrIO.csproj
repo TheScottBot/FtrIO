@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
@@ -9,7 +9,7 @@
         <Version>1.0.0</Version>
         <Authors>TheScottBot</Authors>
         <Description>A .NET feature-toggle library. Gate method execution via appsettings.json Toggles, either explicitly or by decorating methods with [Toggle].</Description>
-        <PackageTags>feature-toggle;feature-flag;toggle</PackageTags>
+        <PackageTags>feature-toggle;feature-flag;toggle;dotnet;net6;net7;net8;net9;net10</PackageTags>
         <RepositoryUrl>https://github.com/TheScottBot/FtrIO</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -18,9 +18,17 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="AspectInjector" Version="2.9.0" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
+      <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net9.0' or '$(TargetFramework)' == 'net10.0'">
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.8" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.8" />
-      <PackageReference Include="AspectInjector" Version="2.9.0" />
     </ItemGroup>
 
     <ItemGroup>
