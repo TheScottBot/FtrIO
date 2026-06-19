@@ -74,5 +74,41 @@
 
             return default(T);
         }
+
+        public Task ExecuteMethodIfToggleOnAsync(Func<Task> methodToRun, IToggleParser configParser, string? keyName = null)
+        {
+            var key = ResolveToggleKey(methodToRun, keyName);
+            var response = GetToggleState(configParser, key);
+            if (response == ToggleStatus.Active)
+            {
+                return methodToRun();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task ExecuteMethodIfToggleOnAsync(Func<Task> methodToRun, string? keyName = null)
+        {
+            IToggleParser configParser = new ToggleParser();
+            return ExecuteMethodIfToggleOnAsync(methodToRun, configParser, keyName);
+        }
+
+        public Task<TResult> ExecuteMethodIfToggleOnAsync<TResult>(Func<Task<TResult>> methodToRun, IToggleParser configParser, string? keyName = null)
+        {
+            var key = ResolveToggleKey(methodToRun, keyName);
+            var response = GetToggleState(configParser, key);
+            if (response == ToggleStatus.Active)
+            {
+                return methodToRun();
+            }
+
+            return Task.FromResult(default(TResult)!);
+        }
+
+        public Task<TResult> ExecuteMethodIfToggleOnAsync<TResult>(Func<Task<TResult>> methodToRun, string? keyName = null)
+        {
+            IToggleParser configParser = new ToggleParser();
+            return ExecuteMethodIfToggleOnAsync(methodToRun, configParser, keyName);
+        }
     }
 }

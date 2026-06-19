@@ -260,6 +260,8 @@
   </span>
   <div class="nav-links">
     <a href="#quickstart">Quick start</a>
+    <a href="#async">Async</a>
+    <a href="#di">DI</a>
     <a href="#analyzer">Analyzer</a>
     <a href="#exceptions">Exceptions</a>
     <a href="https://github.com/TheScottBot/FtrIO">GitHub</a>
@@ -312,6 +314,16 @@
         <span class="emoji">📦</span>
         <h3>Zero boilerplate</h3>
         <p>No wrapper classes, no service registrations, no <code>if</code> statements around every call site.</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">⚡</span>
+        <h3>Async support</h3>
+        <p><code>[ToggleAsync]</code> and <code>ExecuteMethodIfToggleOnAsync</code> gate async methods safely without null Task pitfalls.</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🔌</span>
+        <h3>DI / custom parser</h3>
+        <p>Swap in any <code>IToggleParser</code> via <code>ToggleParserProvider.Configure()</code> — databases, feature-flag services, or your DI container.</p>
       </div>
       <div class="feature-card">
         <span class="emoji">🎯</span>
@@ -396,6 +408,81 @@
 
 <span class="at">[Toggle]</span> <span class="kw">public void</span> <span class="nm">SendWelcomeEmail</span><span class="pu">()</span> <span class="pu">{}</span>  <span class="cm">// ✓ fine</span>
 <span class="at">[Toggle]</span> <span class="kw">public void</span> <span class="nm">NewCheckoutFlow</span><span class="pu">()</span>  <span class="pu">{}</span>  <span class="cm">// ✗ FTRIO001: 'NewCheckoutFlow' has no entry in Toggles</span></code></pre>
+  </section>
+
+  <!-- ASYNC -->
+  <section id="async">
+    <h2><span class="icon">⚡</span> Async support</h2>
+
+    <h3><code>[ToggleAsync]</code> attribute</h3>
+    <p>For methods that return <code>Task</code> or <code>Task&lt;T&gt;</code>, use <code>[ToggleAsync]</code> instead of <code>[Toggle]</code>. It gates the method by its own name against config, but handles the "off" path correctly — returning <code>Task.CompletedTask</code> or <code>Task.FromResult(default)</code> rather than <code>null</code>, so the result is always safely awaitable.</p>
+    <pre><code><span class="at">[ToggleAsync]</span>
+<span class="kw">public async</span> <span class="ty">Task</span> <span class="nm">SendWelcomeEmailAsync</span><span class="pu">()</span>
+<span class="pu">{</span>
+    <span class="kw">await</span> <span class="nm">emailClient</span><span class="pu">.</span><span class="nm">SendAsync</span><span class="pu">(...);</span>
+<span class="pu">}</span>
+
+<span class="kw">await</span> <span class="nm">SendWelcomeEmailAsync</span><span class="pu">();</span>  <span class="cm">// safely awaitable whether the toggle is on or off</span></code></pre>
+
+    <div class="note">
+      <strong>Use <code>[ToggleAsync]</code> for async, <code>[Toggle]</code> for sync.</strong> Using <code>[Toggle]</code> on an async method compiles fine but risks a <code>NullReferenceException</code> on await when the toggle is off.
+    </div>
+
+    <h3><code>ExecuteMethodIfToggleOnAsync</code></h3>
+    <p>The manual-control equivalent for async. Accepts <code>Func&lt;Task&gt;</code> and <code>Func&lt;Task&lt;TResult&gt;&gt;</code> and always returns an awaitable result:</p>
+    <pre><code><span class="kw">var</span> <span class="nm">featureToggle</span> <span class="pu">=</span> <span class="kw">new</span> <span class="ty">FeatureToggle</span><span class="pu">&lt;</span><span class="kw">bool</span><span class="pu">&gt;();</span>
+
+<span class="cm">// Gate a Task-returning method</span>
+<span class="kw">await</span> <span class="nm">featureToggle</span><span class="pu">.</span><span class="nm">ExecuteMethodIfToggleOnAsync</span><span class="pu">(</span>
+    <span class="pu">()</span> <span class="pu">=&gt;</span> <span class="nm">emailClient</span><span class="pu">.</span><span class="nm">SendAsync</span><span class="pu">(),</span> <span class="st">"SendWelcomeEmail"</span><span class="pu">);</span>
+
+<span class="cm">// Gate a Task&lt;T&gt;-returning method</span>
+<span class="kw">var</span> <span class="nm">result</span> <span class="pu">=</span> <span class="kw">await</span> <span class="nm">featureToggle</span><span class="pu">.</span><span class="nm">ExecuteMethodIfToggleOnAsync</span><span class="pu">(</span>
+    <span class="pu">()</span> <span class="pu">=&gt;</span> <span class="nm">orderService</span><span class="pu">.</span><span class="nm">PlaceOrderAsync</span><span class="pu">(),</span> <span class="st">"NewCheckoutFlow"</span><span class="pu">);</span></code></pre>
+  </section>
+
+  <!-- DI / CUSTOM PARSER -->
+  <section id="di">
+    <h2><span class="icon">🔌</span> Custom parser / Dependency Injection</h2>
+    <p>By default, <code>[Toggle]</code>, <code>[ToggleAsync]</code>, and <code>ExecuteMethodIfToggleOn</code> all use the built-in <code>ToggleParser</code> which reads from <code>appsettings.json</code>. To swap in a custom <code>IToggleParser</code> — one that reads from a database, a feature-flag service, or a DI container — call <code>ToggleParserProvider.Configure</code> once at application startup before any toggled methods run:</p>
+    <pre><code><span class="kw">using</span> <span class="nm">FtrIO</span><span class="pu">;</span>
+<span class="kw">using</span> <span class="nm">FtrIO.Classes</span><span class="pu">;</span>
+
+<span class="cm">// Manual — use default ToggleParser at a custom path</span>
+<span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">ToggleParser</span><span class="pu">());</span>
+
+<span class="cm">// With Microsoft.Extensions.DependencyInjection</span>
+<span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span>
+    <span class="nm">host</span><span class="pu">.</span><span class="nm">Services</span><span class="pu">.</span><span class="nm">GetRequiredService</span><span class="pu">&lt;</span><span class="ty">IToggleParser</span><span class="pu">&gt;());</span></code></pre>
+
+    <p>If <code>Configure</code> is never called, the default <code>ToggleParser</code> is used automatically — existing consumers don't need to change anything.</p>
+    <p><code>ExecuteMethodIfToggleOn</code> and <code>ExecuteMethodIfToggleOnAsync</code> also accept an <code>IToggleParser</code> directly for per-call control:</p>
+    <pre><code><span class="kw">await</span> <span class="nm">featureToggle</span><span class="pu">.</span><span class="nm">ExecuteMethodIfToggleOnAsync</span><span class="pu">(</span>
+    <span class="pu">()</span> <span class="pu">=&gt;</span> <span class="nm">SendAsync</span><span class="pu">(),</span> <span class="nm">myCustomParser</span><span class="pu">,</span> <span class="st">"SendWelcomeEmail"</span><span class="pu">);</span></code></pre>
+
+    <h3>Analyzer behaviour with a custom parser</h3>
+    <p>The Roslyn analyzer checks <code>[Toggle]</code>-decorated methods against <code>appsettings.json</code> at build time. <strong>If your custom parser does not use <code>appsettings.json</code></strong>, do not register it as an <code>AdditionalFiles</code> entry — doing so will produce false <code>FTRIO001</code> errors for keys that exist in your custom source but not in the file.</p>
+
+    <table>
+      <thead>
+        <tr><th>Scenario</th><th>What to do</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Using the default <code>ToggleParser</code> with <code>appsettings.json</code></td>
+          <td>Add the <code>AdditionalFiles</code> entry to enable the analyzer</td>
+        </tr>
+        <tr>
+          <td>Using a custom <code>IToggleParser</code></td>
+          <td>Omit the <code>AdditionalFiles</code> entry — analyzer stays silent</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>To silence <code>FTRIO001</code> entirely regardless of parser:</p>
+    <pre><code><span class="xml-tag">&lt;PropertyGroup&gt;</span>
+  <span class="xml-tag">&lt;NoWarn&gt;</span>FTRIO001<span class="xml-tag">&lt;/NoWarn&gt;</span>
+<span class="xml-tag">&lt;/PropertyGroup&gt;</span></code></pre>
   </section>
 
   <!-- MANUAL CONTROL -->
