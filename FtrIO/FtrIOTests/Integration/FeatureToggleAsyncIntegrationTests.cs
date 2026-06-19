@@ -141,6 +141,62 @@ namespace FtrIOTests.Integration
             await FakeAsyncVoidMethodToggledOff();
         }
 
+        // ── Exception parity with sync paths ─────────────────────────────────
+
+        [Test]
+        public void ExecuteMethodIfToggleOnAsync_ThrowsToggleDoesNotExistException_WhenKeyMissing()
+        {
+            IFeatureToggle<bool> featureToggle = new FeatureToggle<bool>();
+
+            Assert.ThrowsAsync<ToggleDoesNotExistException>(
+                () => featureToggle.ExecuteMethodIfToggleOnAsync(() => Task.CompletedTask, "KeyThatDoesNotExist"));
+        }
+
+        [Test]
+        public void ExecuteMethodIfToggleOnAsync_ThrowsToggleParsedOutOfRangeException_WhenValueIsUnparseable()
+        {
+            IFeatureToggle<bool> featureToggle = new FeatureToggle<bool>();
+
+            // "asdf" key exists in appsettings.json with value "ASDF" — not a valid boolean
+            Assert.ThrowsAsync<ToggleParsedOutOfRangeException>(
+                () => featureToggle.ExecuteMethodIfToggleOnAsync(() => Task.CompletedTask, "asdf"));
+        }
+
+        [Test]
+        public void ExecuteMethodIfToggleOnAsyncWithResult_ThrowsToggleDoesNotExistException_WhenKeyMissing()
+        {
+            IFeatureToggle<bool> featureToggle = new FeatureToggle<bool>();
+
+            Assert.ThrowsAsync<ToggleDoesNotExistException>(
+                () => featureToggle.ExecuteMethodIfToggleOnAsync(
+                    async () => { await Task.Yield(); return true; }, "KeyThatDoesNotExist"));
+        }
+
+        [Test]
+        public void ExecuteMethodIfToggleOnAsyncWithResult_ThrowsToggleParsedOutOfRangeException_WhenValueIsUnparseable()
+        {
+            IFeatureToggle<bool> featureToggle = new FeatureToggle<bool>();
+
+            Assert.ThrowsAsync<ToggleParsedOutOfRangeException>(
+                () => featureToggle.ExecuteMethodIfToggleOnAsync(
+                    async () => { await Task.Yield(); return true; }, "asdf"));
+        }
+
+        [Test]
+        public void ToggleAsyncAttribute_ThrowsToggleDoesNotExistException_WhenKeyMissing()
+        {
+            // The woven Around advice runs synchronously before the async state machine starts,
+            // so the exception escapes the call site directly — it is NOT a faulted Task.
+            Assert.Throws<ToggleDoesNotExistException>(() => FakeAsyncMethodWithMissingKey());
+        }
+
+        [Test]
+        public void ToggleAsyncAttribute_ThrowsToggleParsedOutOfRangeException_WhenValueIsUnparseable()
+        {
+            // Same: exception is synchronous, not wrapped in the returned Task.
+            Assert.Throws<ToggleParsedOutOfRangeException>(() => FakeAsyncMethodWithUnparseableValue());
+        }
+
         // ── Helpers ───────────────────────────────────────────────────────────
 
         private async Task<bool> FakeAsyncMethodWithNoToggleAttribute()
@@ -167,6 +223,20 @@ namespace FtrIOTests.Integration
         protected async Task FakeAsyncVoidMethodToggledOff()
         {
             await Task.Yield();
+        }
+
+        [ToggleAsync]
+        protected async Task<bool> FakeAsyncMethodWithMissingKey()
+        {
+            await Task.Yield();
+            return true;
+        }
+
+        [ToggleAsync]
+        protected async Task<bool> FakeAsyncMethodWithUnparseableValue()
+        {
+            await Task.Yield();
+            return true;
         }
     }
 }
