@@ -766,6 +766,9 @@ FTRIO__Toggles__NewCheckout=50%</code></pre>
 <span class="cm">// 5. Flush remaining staged changes on shutdown</span>
 <span class="nm">buffer</span><span class="pu">.</span><span class="nm">Dispose</span><span class="pu">();</span></code></pre>
 
+    <h3>Multiple providers</h3>
+    <p>Multiple providers writing to the same buffer work independently. Each polls its own source and stages its keys. If two providers update the same key before a flush, the last staged value wins — no coordination required.</p>
+
     <h3><code>CompositeToggleParser</code></h3>
     <p>For cases where you want one source to override another at <strong>read time</strong> without the buffer, <code>CompositeToggleParser</code> chains parsers with first-wins fallthrough:</p>
     <pre><code><span class="cm">// Env var overrides appsettings.json — no buffer, direct read fallthrough</span>
@@ -829,6 +832,16 @@ FTRIO__Toggles__NewCheckout=50%</code></pre>
 <span class="pu">{</span>
     <span class="cm">// The value isn't true/false/1/0</span>
 <span class="pu">}</span></code></pre>
+
+    <div class="note">
+      <strong>Async paths:</strong> all three exceptions propagate synchronously — thrown before any <code>Task</code> is created, not wrapped in a faulted <code>Task</code>. A standard <code>try/catch</code> block catches them identically on sync and async call sites.
+    </div>
+  </section>
+
+  <!-- COMPANION TOOLING -->
+  <section id="tooling">
+    <h2><span class="icon">🛠️</span> Companion tooling</h2>
+    <p><a href="https://github.com/TheScottBot/ftrio-onetwo">ftrio-onetwo</a> is a command-line utility that supplements this library — see the repository for installation and usage instructions.</p>
   </section>
 
   <!-- OPTIONAL CONFIG -->
