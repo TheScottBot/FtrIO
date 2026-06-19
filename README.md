@@ -202,6 +202,28 @@ FtrIO's default config parser looks for `appsettings.json` in the application's 
 
 This only applies if you are using FtrIO's built-in `ToggleParser`. If you implement `IToggleParser` yourself, config loading is entirely your responsibility and the above doesn't apply.
 
+## Hot-reload
+
+By default, `ToggleParser` reads `appsettings.json` once at startup. To have toggle state picked up automatically whenever the file changes on disk — without restarting the application — add `ReloadOnChange: true` to the `FtrIO` section of your `appsettings.json`:
+
+```json
+{
+  "FtrIO": {
+    "ReloadOnChange": true
+  },
+  "Toggles": {
+    "SendWelcomeEmail": true,
+    "NewCheckoutFlow": false
+  }
+}
+```
+
+When this is set, `ToggleParser` attaches a file watcher to `appsettings.json` via `Microsoft.Extensions.Configuration`. The next call to any `[Toggle]`-decorated method or `ExecuteMethodIfToggleOn` after the file changes will reflect the updated values — no restart required.
+
+If `FtrIO:ReloadOnChange` is absent or `false`, the file is read once and the configuration is fixed for the lifetime of the parser instance.
+
+> **Note:** Hot-reload only applies when using the default `ToggleParser`. If you supply a custom `IToggleParser` via `ToggleParserProvider.Configure`, reload behaviour is entirely your responsibility.
+
 ## `appsettings.json` is optional
 
 `appsettings.json` doesn't have to exist. If it's missing entirely, nothing has been explicitly toggled off, so every `[Toggle]`-decorated method and every `ExecuteMethodIfToggleOn` call runs normally - `GetToggleStatus` returns `true` for any key in that case.

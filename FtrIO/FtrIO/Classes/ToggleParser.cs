@@ -16,7 +16,22 @@
 
             if (_configFileExists)
             {
-                _toggles = new ConfigurationBuilder().SetBasePath(basePath).AddJsonFile("appsettings.json", optional: true).Build().GetSection("Toggles");
+                var config = new ConfigurationBuilder()
+                    .SetBasePath(basePath)
+                    .AddJsonFile("appsettings.json", optional: true)
+                    .Build();
+
+                var reloadOnChange = string.Equals(config["FtrIO:ReloadOnChange"], "true", StringComparison.OrdinalIgnoreCase);
+
+                if (reloadOnChange)
+                {
+                    config = new ConfigurationBuilder()
+                        .SetBasePath(basePath)
+                        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                        .Build();
+                }
+
+                _toggles = config.GetSection("Toggles");
             }
         }
 
