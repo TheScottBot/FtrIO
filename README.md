@@ -446,7 +446,9 @@ This only applies if you are using FtrIO's built-in `ToggleParser`. If you imple
 
 ## Hot-reload
 
-By default, `ToggleParser` reads `appsettings.json` once at startup. To have toggle state picked up automatically whenever the file changes on disk — without restarting the application — add `ReloadOnChange: true` to the `FtrIO` section of your `appsettings.json`:
+By default, `ToggleParser` reads `appsettings.json` once at startup. Setting `ReloadOnChange: true` in the `FtrIO` section enables a file watcher so toggle state is picked up automatically whenever the file changes on disk — no restart required.
+
+**This is strongly recommended in all applications**, and **mandatory when using any dynamic provider** (`HttpToggleParser`, `AzureAppConfigToggleParser`, `EnvironmentVariableToggleParser` in buffer mode). Without it, `ToggleParser` reads the file once at startup and never sees the values that providers flush to it.
 
 ```json
 {
@@ -460,7 +462,7 @@ By default, `ToggleParser` reads `appsettings.json` once at startup. To have tog
 }
 ```
 
-When this is set, `ToggleParser` attaches a file watcher to `appsettings.json` via `Microsoft.Extensions.Configuration`. The next call to any `[Toggle]`-decorated method or `ExecuteMethodIfToggleOn` after the file changes will reflect the updated values — no restart required.
+When set, `ToggleParser` attaches a file watcher via `Microsoft.Extensions.Configuration`. The next call to any `[Toggle]`-decorated method or `ExecuteMethodIfToggleOn` after the file changes will reflect the updated values.
 
 If `FtrIO:ReloadOnChange` is absent or `false`, the file is read once and the configuration is fixed for the lifetime of the parser instance.
 
