@@ -21,6 +21,17 @@ dotnet add package FtrIO
 - **appsettings.json as a read-through cache.** Other libraries make your app depend on an external flag service being online. FtrIO flips this: providers run in the background and write their state into `appsettings.json`; `ToggleParser` always reads from the file. If the remote source goes offline, the last known state is served automatically from disk — no fallback code, no circuit breaker, no stale-cache TTL to configure.
 - **Escape hatch built in.** The same `appsettings.json` you already deploy works as a fully functional toggle store without any provider. Swap from a static file to Azure App Config (or back) without touching a single call site.
 
+## How it compares
+
+|  | **FtrIO** | LaunchDarkly | Microsoft.FeatureManagement | Flagsmith |
+|--|-----------|-------------|----------------------------|-----------|
+| **Call-site syntax** | `[Toggle]` attribute, zero noise | SDK call at every site | `if (await _fm.IsEnabledAsync(...))` | SDK call at every site |
+| **Works offline** | ✅ always (file-backed) | ❌ needs SDK fallback config | ✅ | ❌ needs SDK fallback config |
+| **Compile-time validation** | ✅ Roslyn analyzer | ❌ | ❌ | ❌ |
+| **Percentage rollout** | ✅ | ✅ | ✅ | ✅ |
+| **Self-hosted / no vendor** | ✅ | ❌ paid SaaS | ✅ | ✅ (or SaaS) |
+| **Cost** | Free, OSS | Paid SaaS | Free, OSS | Free tier / paid SaaS |
+
 ---
 
 ## Quick start
