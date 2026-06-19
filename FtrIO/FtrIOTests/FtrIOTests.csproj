@@ -16,6 +16,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\FtrIO\FtrIO.csproj" />
+      <ProjectReference Include="..\FtrIO.Providers.Http\FtrIO.Providers.Http.csproj" />
       <ProjectReference Include="..\FtrIO.Analyzers\FtrIO.Analyzers.csproj"
                         OutputItemType="Analyzer" />
     </ItemGroup>

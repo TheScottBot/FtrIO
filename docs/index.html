@@ -262,6 +262,8 @@
     <a href="#quickstart">Quick start</a>
     <a href="#async">Async</a>
     <a href="#di">DI</a>
+    <a href="#strategies">Strategies</a>
+    <a href="#providers">Providers</a>
     <a href="#analyzer">Analyzer</a>
     <a href="#exceptions">Exceptions</a>
     <a href="https://github.com/TheScottBot/FtrIO">GitHub</a>
@@ -323,7 +325,17 @@
       <div class="feature-card">
         <span class="emoji">🔌</span>
         <h3>DI / custom parser</h3>
-        <p>Swap in any <code>IToggleParser</code> via <code>ToggleParserProvider.Configure()</code> — databases, feature-flag services, or your DI container.</p>
+        <p>Swap in any <code>IToggleParser</code> via <code>ToggleParserProvider.Configure()</code> at startup — including parsers resolved from your DI container.</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🎲</span>
+        <h3>Strategy decisions</h3>
+        <p>Percentage rollouts, blue-green slots, and custom decision logic via <code>StrategyToggleParser</code> — no call-site changes required.</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🌐</span>
+        <h3>Dynamic providers</h3>
+        <p>HTTP endpoints, Azure App Config, and env vars push updates to <code>appsettings.json</code> via a buffered pipeline. The file is always the source of truth.</p>
       </div>
       <div class="feature-card">
         <span class="emoji">🎯</span>
@@ -483,6 +495,158 @@
     <pre><code><span class="xml-tag">&lt;PropertyGroup&gt;</span>
   <span class="xml-tag">&lt;NoWarn&gt;</span>FTRIO001<span class="xml-tag">&lt;/NoWarn&gt;</span>
 <span class="xml-tag">&lt;/PropertyGroup&gt;</span></code></pre>
+  </section>
+
+  <!-- STRATEGIES -->
+  <section id="strategies">
+    <h2><span class="icon">🎲</span> Strategy-based decisions</h2>
+    <p><code>StrategyToggleParser</code> is a drop-in replacement for <code>ToggleParser</code> that routes raw config values through a chain of <code>IToggleDecisionStrategy</code> implementations. <code>BooleanStrategy</code> is always appended as the final fallback so existing <code>true</code>/<code>false</code> values continue to work with no changes.</p>
+
+    <h3>Percentage rollout</h3>
+    <p>Any value ending in <code>%</code> is handled by <code>PercentageRolloutStrategy</code>. The check is probabilistic per-call — a 20% rollout means roughly 1 in 5 calls execute the method body:</p>
+    <pre><code><span class="cm">// appsettings.json</span>
+<span class="pu">{</span> <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"NewCheckout"</span><span class="pu">:</span> <span class="st">"20%"</span> <span class="pu">}</span> <span class="pu">}</span>
+
+<span class="cm">// startup</span>
+<span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">StrategyToggleParser</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">PercentageRolloutStrategy</span><span class="pu">()));</span>
+
+<span class="at">[Toggle]</span>
+<span class="kw">public void</span> <span class="nm">NewCheckout</span><span class="pu">()</span> <span class="pu">{</span> <span class="pu">...</span> <span class="pu">}</span>  <span class="cm">// runs ~20% of the time</span></code></pre>
+
+    <h3>Blue-green deployment</h3>
+    <p><code>BlueGreenStrategy</code> routes by named deployment slot. The current slot is declared at startup; the config value is the slot that should be active:</p>
+    <pre><code><span class="cm">// appsettings.json</span>
+<span class="pu">{</span> <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"PaymentV2"</span><span class="pu">:</span> <span class="st">"blue"</span> <span class="pu">}</span> <span class="pu">}</span>
+
+<span class="cm">// startup — currentSlot, knownSlots...</span>
+<span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">StrategyToggleParser</span><span class="pu">(</span>
+    <span class="kw">new</span> <span class="ty">BlueGreenStrategy</span><span class="pu">(</span><span class="st">"blue"</span><span class="pu">,</span> <span class="st">"blue"</span><span class="pu">,</span> <span class="st">"green"</span><span class="pu">)));</span>
+
+<span class="at">[Toggle]</span>
+<span class="kw">public void</span> <span class="nm">PaymentV2</span><span class="pu">()</span> <span class="pu">{</span> <span class="pu">...</span> <span class="pu">}</span>  <span class="cm">// runs only on the "blue" slot</span></code></pre>
+
+    <h3>Combining strategies</h3>
+    <p>Strategies are tried in registration order — the first whose <code>CanHandle</code> returns <code>true</code> wins. <code>BooleanStrategy</code> is always appended automatically as the final fallback.</p>
+    <pre><code><span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">StrategyToggleParser</span><span class="pu">(</span>
+    <span class="kw">new</span> <span class="ty">PercentageRolloutStrategy</span><span class="pu">(),</span>
+    <span class="kw">new</span> <span class="ty">BlueGreenStrategy</span><span class="pu">(</span><span class="st">"blue"</span><span class="pu">,</span> <span class="st">"blue"</span><span class="pu">,</span> <span class="st">"green"</span><span class="pu">)</span>
+    <span class="cm">// BooleanStrategy auto-appended — handles true/false/1/0</span>
+<span class="pu">));</span></code></pre>
+
+    <h3>Custom strategies</h3>
+    <p>Implement <code>IToggleDecisionStrategy</code> to add any decision logic your application needs:</p>
+    <pre><code><span class="kw">public class</span> <span class="ty">TimeWindowStrategy</span> <span class="pu">:</span> <span class="ty">IToggleDecisionStrategy</span>
+<span class="pu">{</span>
+    <span class="kw">public bool</span> <span class="nm">CanHandle</span><span class="pu">(</span><span class="kw">string</span> <span class="nm">rawValue</span><span class="pu">)</span> <span class="pu">=&gt;</span> <span class="nm">rawValue</span><span class="pu">.</span><span class="nm">Contains</span><span class="pu">(</span><span class="st">".."</span><span class="pu">);</span> <span class="cm">// e.g. "09:00..17:00"</span>
+    <span class="kw">public bool</span> <span class="nm">ShouldExecute</span><span class="pu">(</span><span class="kw">string</span> <span class="nm">key</span><span class="pu">,</span> <span class="kw">string</span> <span class="nm">rawValue</span><span class="pu">)</span>
+    <span class="pu">{</span>
+        <span class="cm">// parse the window and check the current time</span>
+    <span class="pu">}</span>
+<span class="pu">}</span></code></pre>
+  </section>
+
+  <!-- PROVIDERS -->
+  <section id="providers">
+    <h2><span class="icon">🌐</span> Dynamic providers</h2>
+
+    <div class="note">
+      <strong>appsettings.json is always the source of truth.</strong> Providers push toggle values into a buffer; the buffer flushes to <code>appsettings.json</code> on a configurable interval; <code>ToggleParser</code> reads from <code>appsettings.json</code> as normal. If a provider goes offline, the last flushed state in the file persists automatically — no fallback logic is needed at call sites.
+    </div>
+
+    <h3>Configuration</h3>
+    <pre><code><span class="pu">{</span>
+  <span class="st">"FtrIO"</span><span class="pu">:</span> <span class="pu">{</span>
+    <span class="st">"ReloadOnChange"</span><span class="pu">:</span> <span class="kw">true</span><span class="pu">,</span>   <span class="cm">// recommended when using providers</span>
+    <span class="st">"FlushInterval"</span><span class="pu">:</span> <span class="nm">5</span>         <span class="cm">// seconds between buffer flushes, default 5</span>
+  <span class="pu">},</span>
+  <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span>
+    <span class="st">"SendWelcomeEmail"</span><span class="pu">:</span> <span class="kw">true</span>
+  <span class="pu">}</span>
+<span class="pu">}</span></code></pre>
+
+    <table>
+      <thead><tr><th>Key</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>ReloadOnChange</code></td>
+          <td><code>false</code></td>
+          <td><strong>Recommended <code>true</code> when using providers.</strong> Without it, <code>ToggleParser</code> reads the file once at startup and won't see buffer flushes.</td>
+        </tr>
+        <tr>
+          <td><code>FlushInterval</code></td>
+          <td><code>5</code></td>
+          <td>Seconds between buffer flushes to <code>appsettings.json</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3><code>ToggleProviderBuffer</code></h3>
+    <p>The buffer is the central piece — create it once at startup and pass it to each provider. It reads <code>FlushInterval</code> from <code>appsettings.json</code> automatically, serialises file writes, and performs atomic replacement so a crash mid-write can never corrupt the file.</p>
+    <p><strong>Write storms:</strong> staging uses a <code>ConcurrentDictionary</code> — rapid successive updates to the same key collapse to the last value before flush. If a write is in progress when the timer fires, that tick is skipped; staged values accumulate for the next tick and are never dropped.</p>
+    <p>Call <code>buffer.Dispose()</code> at shutdown to flush any remaining staged changes before the process exits.</p>
+
+    <h3>HTTP provider</h3>
+    <pre><code>dotnet add package FtrIO.Providers.Http</code></pre>
+    <p>The endpoint must return a <code>Toggles</code> object at the root — the same shape as <code>appsettings.json</code>:</p>
+    <pre><code><span class="pu">{</span> <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"SendWelcomeEmail"</span><span class="pu">:</span> <span class="st">"true"</span><span class="pu">,</span> <span class="st">"NewCheckout"</span><span class="pu">:</span> <span class="st">"50%"</span> <span class="pu">}</span> <span class="pu">}</span></code></pre>
+    <pre><code><span class="kw">var</span> <span class="nm">buffer</span> <span class="pu">=</span> <span class="kw">new</span> <span class="ty">ToggleProviderBuffer</span><span class="pu">();</span>
+<span class="kw">new</span> <span class="ty">HttpToggleParser</span><span class="pu">(</span><span class="st">"https://flags.example.com/toggles"</span><span class="pu">,</span> <span class="nm">buffer</span><span class="pu">,</span>
+    <span class="nm">pollInterval</span><span class="pu">:</span> <span class="ty">TimeSpan</span><span class="pu">.</span><span class="nm">FromSeconds</span><span class="pu">(</span><span class="nm">30</span><span class="pu">));</span>
+
+<span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">StrategyToggleParser</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">PercentageRolloutStrategy</span><span class="pu">()));</span></code></pre>
+
+    <h3>Azure App Config provider</h3>
+    <pre><code>dotnet add package FtrIO.Providers.AzureAppConfig</code></pre>
+    <p>Keys in App Config should be prefixed with <code>FtrIO:Toggles:</code> so <code>FtrIO:Toggles:SendWelcomeEmail</code> maps to toggle key <code>SendWelcomeEmail</code>.</p>
+    <pre><code><span class="kw">var</span> <span class="nm">buffer</span> <span class="pu">=</span> <span class="kw">new</span> <span class="ty">ToggleProviderBuffer</span><span class="pu">();</span>
+
+<span class="cm">// Connection string</span>
+<span class="kw">new</span> <span class="ty">AzureAppConfigToggleParser</span><span class="pu">(</span><span class="st">"Endpoint=https://...;Id=...;Secret=..."</span><span class="pu">,</span> <span class="nm">buffer</span><span class="pu">);</span>
+
+<span class="cm">// Managed Identity / DefaultAzureCredential</span>
+<span class="kw">new</span> <span class="ty">AzureAppConfigToggleParser</span><span class="pu">(</span>
+    <span class="kw">new</span> <span class="ty">Uri</span><span class="pu">(</span><span class="st">"https://myconfig.azconfig.io"</span><span class="pu">),</span> <span class="kw">new</span> <span class="ty">DefaultAzureCredential</span><span class="pu">(),</span> <span class="nm">buffer</span><span class="pu">);</span>
+
+<span class="cm">// With label filter (e.g. separate staging vs. production values)</span>
+<span class="kw">new</span> <span class="ty">AzureAppConfigToggleParser</span><span class="pu">(</span><span class="nm">connectionString</span><span class="pu">,</span> <span class="nm">buffer</span><span class="pu">,</span> <span class="nm">label</span><span class="pu">:</span> <span class="st">"production"</span><span class="pu">);</span></code></pre>
+
+    <h3>Environment variable provider</h3>
+    <p>Set env vars with the default <code>FTRIO__Toggles__</code> prefix (double-underscore follows .NET config hierarchy conventions):</p>
+    <pre><code>FTRIO__Toggles__SendWelcomeEmail=true
+FTRIO__Toggles__NewCheckout=50%</code></pre>
+    <pre><code><span class="kw">var</span> <span class="nm">buffer</span> <span class="pu">=</span> <span class="kw">new</span> <span class="ty">ToggleProviderBuffer</span><span class="pu">();</span>
+<span class="kw">new</span> <span class="ty">EnvironmentVariableToggleParser</span><span class="pu">(</span><span class="nm">buffer</span><span class="pu">);</span>  <span class="cm">// snapshot at startup</span>
+
+<span class="cm">// Or re-snapshot periodically (e.g. Docker secrets volumes)</span>
+<span class="kw">new</span> <span class="ty">EnvironmentVariableToggleParser</span><span class="pu">(</span><span class="nm">buffer</span><span class="pu">,</span> <span class="nm">pollInterval</span><span class="pu">:</span> <span class="ty">TimeSpan</span><span class="pu">.</span><span class="nm">FromMinutes</span><span class="pu">(</span><span class="nm">5</span><span class="pu">));</span></code></pre>
+
+    <h3>Full wiring example</h3>
+    <pre><code><span class="cm">// 1. Create the buffer — reads FlushInterval from appsettings.json</span>
+<span class="kw">var</span> <span class="nm">buffer</span> <span class="pu">=</span> <span class="kw">new</span> <span class="ty">ToggleProviderBuffer</span><span class="pu">();</span>
+
+<span class="cm">// 2. Start providers — push updates to the buffer in the background</span>
+<span class="kw">new</span> <span class="ty">HttpToggleParser</span><span class="pu">(</span><span class="st">"https://flags.example.com/toggles"</span><span class="pu">,</span> <span class="nm">buffer</span><span class="pu">);</span>
+<span class="kw">new</span> <span class="ty">EnvironmentVariableToggleParser</span><span class="pu">(</span><span class="nm">buffer</span><span class="pu">);</span>
+
+<span class="cm">// 3. Configure the reader — always reads from appsettings.json</span>
+<span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">StrategyToggleParser</span><span class="pu">(</span>
+    <span class="kw">new</span> <span class="ty">PercentageRolloutStrategy</span><span class="pu">(),</span>
+    <span class="kw">new</span> <span class="ty">BlueGreenStrategy</span><span class="pu">(</span><span class="st">"blue"</span><span class="pu">,</span> <span class="st">"blue"</span><span class="pu">,</span> <span class="st">"green"</span><span class="pu">)</span>
+<span class="pu">));</span>
+
+<span class="cm">// 4. Call sites are completely unchanged</span>
+<span class="nm">emailService</span><span class="pu">.</span><span class="nm">SendWelcomeEmail</span><span class="pu">();</span>
+
+<span class="cm">// 5. Flush remaining staged changes on shutdown</span>
+<span class="nm">buffer</span><span class="pu">.</span><span class="nm">Dispose</span><span class="pu">();</span></code></pre>
+
+    <h3><code>CompositeToggleParser</code></h3>
+    <p>For cases where you want one source to override another at <strong>read time</strong> without the buffer, <code>CompositeToggleParser</code> chains parsers with first-wins fallthrough:</p>
+    <pre><code><span class="cm">// Env var overrides appsettings.json — no buffer, direct read fallthrough</span>
+<span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">CompositeToggleParser</span><span class="pu">(</span>
+    <span class="kw">new</span> <span class="ty">EnvironmentVariableToggleParser</span><span class="pu">(),</span>  <span class="cm">// standalone mode — reads on demand</span>
+    <span class="kw">new</span> <span class="ty">ToggleParser</span><span class="pu">()</span>
+<span class="pu">));</span></code></pre>
   </section>
 
   <!-- MANUAL CONTROL -->
