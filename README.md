@@ -182,6 +182,34 @@ catch (ToggleAttributeMissingException)
 }
 ```
 
+### Exceptions on async paths
+
+All three exceptions propagate **synchronously** — they are thrown before any `Task` is created, not wrapped in a faulted `Task`. This applies identically to sync and async call sites.
+
+For `ExecuteMethodIfToggleOnAsync`, the toggle check runs before the delegate is invoked, so a missing or unparseable key throws at the call site:
+
+```csharp
+// throws ToggleDoesNotExistException synchronously — no await needed to observe it
+try
+{
+    await featureToggle.ExecuteMethodIfToggleOnAsync(() => DoWorkAsync(), "MissingKey");
+}
+catch (ToggleDoesNotExistException) { }
+```
+
+For `[ToggleAsync]`, the woven `Around` advice also runs synchronously before the async state machine starts — the exception escapes the decorated method call directly, not via the returned `Task`:
+
+```csharp
+// throws ToggleDoesNotExistException synchronously at the point of the call
+try
+{
+    await SendWelcomeEmailAsync();
+}
+catch (ToggleDoesNotExistException) { }
+```
+
+In practice a standard `try/await/catch` block catches both cases, so no special handling is needed. The key point is that these are not faulted tasks — `await`ing is not required to observe the exception.
+
 ## Deploying `appsettings.json`
 
 FtrIO's default config parser looks for `appsettings.json` in the application's output directory at runtime (`AppContext.BaseDirectory`). You need to make sure the file ends up there — it won't be copied automatically unless you tell the build system to do so.
