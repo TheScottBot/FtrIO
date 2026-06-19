@@ -237,6 +237,18 @@
     footer a { color: var(--muted); }
     footer a:hover { color: var(--text); }
 
+    /* PATH DIVIDER */
+    .path-divider {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 3.5rem 0 -2rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--accent-dim);
+    }
+
     /* Syntax highlight helpers */
     .kw  { color: #ff79c6; }
     .cm  { color: #6272a4; font-style: italic; }
@@ -261,7 +273,7 @@
   <div class="nav-links">
     <a href="#quickstart">Quick start</a>
     <a href="#async">Async</a>
-    <a href="#di">DI</a>
+    <a href="#hotreload">Hot-reload</a>
     <a href="#strategies">Strategies</a>
     <a href="#providers">Providers</a>
     <a href="#analyzer">Analyzer</a>
@@ -344,6 +356,16 @@
       </div>
     </div>
   </section>
+
+  <!-- TWO PATHS CALLOUT -->
+  <section>
+    <div class="note">
+      <strong>Two paths, same call sites.</strong>
+      Use the <strong>simple path</strong> — <code>appsettings.json</code> + <code>[Toggle]</code> — when toggle state is managed at deploy time. Switch to <strong>dynamic providers</strong> (HTTP, Azure App Config, env vars) when you need toggle state to change at runtime without a redeploy. Either way, <code>[Toggle]</code>, <code>[ToggleAsync]</code>, and <code>ExecuteMethodIfToggleOn</code> work identically — no call-site changes needed when switching between paths.
+    </div>
+  </section>
+
+  <p class="path-divider">Simple path — appsettings.json</p>
 
   <!-- QUICK START -->
   <section id="quickstart">
@@ -453,6 +475,24 @@
     <span class="pu">()</span> <span class="pu">=&gt;</span> <span class="nm">orderService</span><span class="pu">.</span><span class="nm">PlaceOrderAsync</span><span class="pu">(),</span> <span class="st">"NewCheckoutFlow"</span><span class="pu">);</span></code></pre>
   </section>
 
+  <!-- HOT RELOAD -->
+  <section id="hotreload">
+    <h2><span class="icon">🔄</span> Hot-reload</h2>
+    <p>By default, <code>ToggleParser</code> reads <code>appsettings.json</code> once at startup. Set <code>ReloadOnChange: true</code> in the <code>FtrIO</code> section to pick up file changes on disk without a restart.</p>
+    <p><strong>This is strongly recommended</strong> for all applications. If you are using any dynamic provider it is <strong>mandatory</strong> — without it, <code>ToggleParser</code> reads the file once and never sees the values providers flush to it.</p>
+    <pre><code><span class="pu">{</span>
+  <span class="st">"FtrIO"</span><span class="pu">:</span> <span class="pu">{</span>
+    <span class="st">"ReloadOnChange"</span><span class="pu">:</span> <span class="kw">true</span>
+  <span class="pu">},</span>
+  <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span>
+    <span class="st">"SendWelcomeEmail"</span><span class="pu">:</span> <span class="kw">true</span>
+  <span class="pu">}</span>
+<span class="pu">}</span></code></pre>
+    <p>When set, <code>ToggleParser</code> attaches a file watcher via <code>Microsoft.Extensions.Configuration</code>. The next call to any <code>[Toggle]</code>-decorated method after the file changes will reflect the updated values — no restart required.</p>
+  </section>
+
+  <p class="path-divider">Strategy decisions</p>
+
   <!-- DI / CUSTOM PARSER -->
   <section id="di">
     <h2><span class="icon">🔌</span> Custom parser / Dependency Injection</h2>
@@ -496,6 +536,8 @@
   <span class="xml-tag">&lt;NoWarn&gt;</span>FTRIO001<span class="xml-tag">&lt;/NoWarn&gt;</span>
 <span class="xml-tag">&lt;/PropertyGroup&gt;</span></code></pre>
   </section>
+
+  <p class="path-divider">Dynamic providers — runtime toggle state</p>
 
   <!-- STRATEGIES -->
   <section id="strategies">
@@ -570,7 +612,7 @@
         <tr>
           <td><code>ReloadOnChange</code></td>
           <td><code>false</code></td>
-          <td><strong>Recommended <code>true</code> when using providers.</strong> Without it, <code>ToggleParser</code> reads the file once at startup and won't see buffer flushes.</td>
+          <td><strong>Mandatory when using providers.</strong> Without it, <code>ToggleParser</code> reads the file once at startup and will never see buffer flushes.</td>
         </tr>
         <tr>
           <td><code>FlushInterval</code></td>
@@ -649,6 +691,8 @@ FTRIO__Toggles__NewCheckout=50%</code></pre>
 <span class="pu">));</span></code></pre>
   </section>
 
+  <p class="path-divider">Reference</p>
+
   <!-- MANUAL CONTROL -->
   <section>
     <h2><span class="icon">🎮</span> Manual control</h2>
@@ -706,8 +750,9 @@ FTRIO__Toggles__NewCheckout=50%</code></pre>
   <!-- OPTIONAL CONFIG -->
   <section>
     <h2><span class="icon">📄</span> Optional config</h2>
-    <p><code>appsettings.json</code> is entirely optional. If the file is absent, every toggle is treated as <strong>on</strong> — nothing is gated off. This means you can ship without a config file and nothing breaks.</p>
-    <p>If the file <em>exists</em> but is missing a <code>Toggles</code> key for a specific method, that throws <code>ToggleDoesNotExistException</code> — a present-but-incomplete config is treated as a mistake worth surfacing.</p>
+    <p><strong>Without providers:</strong> <code>appsettings.json</code> is entirely optional. If the file is absent, every toggle is treated as <strong>on</strong> — nothing is gated off. You can ship without a config file and nothing breaks.</p>
+    <p><strong>With providers:</strong> <code>appsettings.json</code> becomes the persistent store that <code>ToggleProviderBuffer</code> writes to and <code>ToggleParser</code> reads from. If the file doesn't exist when the first flush fires, the buffer creates it automatically — so you still don't need to create it manually, but it will exist after the first provider poll. <code>ReloadOnChange: true</code> is mandatory in this mode so <code>ToggleParser</code> picks up each flush.</p>
+    <p>In both modes: if the file <em>exists</em> but is missing a <code>Toggles</code> key for a specific method, that throws <code>ToggleDoesNotExistException</code> — a present-but-incomplete config is treated as a mistake worth surfacing.</p>
   </section>
 
 </main>
