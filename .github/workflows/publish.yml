@@ -34,6 +34,8 @@ jobs:
           VERSION="${{ github.event.release.tag_name }}"
           VERSION="${VERSION#[vV]}"
           dotnet pack FtrIO/FtrIO/FtrIO.csproj --no-build --configuration Release -p:PackageVersion=$VERSION --output FtrIO/nupkgs
+          dotnet pack FtrIO/FtrIO.Providers.Http/FtrIO.Providers.Http.csproj --no-build --configuration Release -p:PackageVersion=$VERSION --output FtrIO/nupkgs
+          dotnet pack FtrIO/FtrIO.Providers.AzureAppConfig/FtrIO.Providers.AzureAppConfig.csproj --no-build --configuration Release -p:PackageVersion=$VERSION --output FtrIO/nupkgs
 
       - name: NuGet login (OIDC → temp API key)
         uses: NuGet/login@v1
