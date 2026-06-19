@@ -38,17 +38,83 @@ in its own `.csproj`. Without it, `[Toggle]` on a method in that project is just
 
 **Decorated methods must be real, named methods on a class** - static or instance, doesn't matter - not local functions. Local functions get name-mangled by the compiler (e.g. a local function called `Calculate` may compile down to something like `<<Main>$>g__Calculate|0_0`), so name-based resolution won't behave as expected, and compiler-generated members like this may not be woven reliably in the first place.
 
+## The `[ToggleAsync]` attribute
+
+For methods that return `Task` or `Task<T>`, use `[ToggleAsync]` instead of `[Toggle]`. It behaves identically — the method is gated by its own name against `appsettings.json` — but handles the async "off" path correctly.
+
+When the toggle is off, `[Toggle]` on an async method would return `null` for the `Task`, causing a `NullReferenceException` when the caller awaits it. `[ToggleAsync]` returns `Task.CompletedTask` (for `Task`-returning methods) or `Task.FromResult(default)` (for `Task<T>`-returning methods) instead, so it is always safe to await.
+
+```csharp
+[ToggleAsync]
+public async Task SendWelcomeEmailAsync()
+{
+    await emailClient.SendAsync(...);
+}
+
+await SendWelcomeEmailAsync(); // safely awaitable whether the toggle is on or off
+```
+
+The same AspectInjector per-project `PackageReference` requirement applies as for `[Toggle]`.
+
 ## `ExecuteMethodIfToggleOn`
 
 `FeatureToggle<T>.ExecuteMethodIfToggleOn` still exists for cases where you want explicit, manual control - passing a `keyName` override, gating a lambda, or gating a method you don't want to (or can't) decorate. Methods passed to it can also be decorated with `[Toggle]` so the toggle key is resolved automatically via reflection (using the method's own name) instead of always being passed explicitly.
 
 If a method is both decorated with `[Toggle]` *and* called via `ExecuteMethodIfToggleOn` with an explicit `keyName`, both checks apply: the explicit key controls whether the call site invokes the method at all, and the method's own woven check (based on its own name) still applies once it runs. In practice both checks should agree, since they'd typically reference related config entries - but it's worth knowing that the explicit key is no longer a way to "override" a `[Toggle]`-decorated method's self-gating once AspectInjector is in play for that project.
 
-## Compile-time validation
+## `ExecuteMethodIfToggleOnAsync`
 
-FtrIO ships a Roslyn analyzer that catches missing config entries at build time rather than at runtime. If you register your `appsettings.json` as an `AdditionalFile`, any `[Toggle]`-decorated method whose name has no matching entry in the `Toggles` section will produce a compiler error (`FTRIO001`) — the build fails rather than the method silently misbehaving at runtime.
+For async methods, `FeatureToggle<T>` provides `ExecuteMethodIfToggleOnAsync` overloads that accept `Func<Task>` and `Func<Task<TResult>>`:
 
-To opt in, add this to your `.csproj`:
+```csharp
+var featureToggle = new FeatureToggle<bool>();
+
+// Gate a Task-returning method
+await featureToggle.ExecuteMethodIfToggleOnAsync(
+    () => emailClient.SendAsync(), "SendWelcomeEmail");
+
+// Gate a Task<T>-returning method
+var result = await featureToggle.ExecuteMethodIfToggleOnAsync(
+    () => orderService.PlaceOrderAsync(), "NewCheckoutFlow");
+```
+
+When the toggle is off, `ExecuteMethodIfToggleOnAsync` returns `Task.CompletedTask` (for `Func<Task>`) or `Task.FromResult(default)` (for `Func<Task<TResult>>`), so the result is always safely awaitable.
+
+## Custom parser / Dependency Injection
+
+By default, `[Toggle]`, `[ToggleAsync]`, and `ExecuteMethodIfToggleOn` all use `ToggleParser` — the built-in implementation that reads from `appsettings.json` in `AppContext.BaseDirectory`. This works out of the box with no configuration.
+
+To use a custom `IToggleParser` — for example, one that reads from a database, a feature-flag service, or a DI container — call `ToggleParserProvider.Configure` once at application startup, before any toggled methods run:
+
+```csharp
+// Manual — point to a different path or a custom implementation
+ToggleParserProvider.Configure(new ToggleParser("/etc/myapp"));
+
+// With Microsoft.Extensions.DependencyInjection
+ToggleParserProvider.Configure(host.Services.GetRequiredService<IToggleParser>());
+```
+
+From that point on, every `[Toggle]` and `[ToggleAsync]` woven call uses the configured parser. If `Configure` is never called, the default `ToggleParser` is used automatically — existing consumers don't need to change anything.
+
+`ExecuteMethodIfToggleOn` and `ExecuteMethodIfToggleOnAsync` also accept an `IToggleParser` directly if you need per-call control:
+
+```csharp
+await featureToggle.ExecuteMethodIfToggleOnAsync(
+    () => SendAsync(), myCustomParser, "SendWelcomeEmail");
+```
+
+### Analyzer behaviour when using a custom parser
+
+The bundled Roslyn analyzer (`FTRIO001`) works by reading `appsettings.json` as a build-time `AdditionalFile` and checking that every `[Toggle]`-decorated method has a matching entry in the `Toggles` section.
+
+**If you are using a custom `IToggleParser` that does not use `appsettings.json`**, you should not register `appsettings.json` as an `AdditionalFile`, or the analyzer will emit false `FTRIO001` errors for keys that exist in your custom source but not in the file.
+
+| Scenario | What to do |
+|---|---|
+| Using the default `ToggleParser` with `appsettings.json` | Register `appsettings.json` as `AdditionalFiles` to enable the analyzer |
+| Using a custom `IToggleParser` | Do **not** add the `AdditionalFiles` entry — the analyzer will stay silent |
+
+To enable the analyzer (default `ToggleParser` only):
 
 ```xml
 <ItemGroup>
@@ -56,7 +122,26 @@ To opt in, add this to your `.csproj`:
 </ItemGroup>
 ```
 
-Without this line the analyzer is silent — the runtime behaviour is unchanged and missing keys still throw `ToggleDoesNotExistException` at runtime as normal.
+To disable the analyzer entirely (suppresses `FTRIO001` regardless of parser):
+
+```xml
+<PropertyGroup>
+  <NoWarn>FTRIO001</NoWarn>
+</PropertyGroup>
+```
+
+Without the `AdditionalFiles` entry the analyzer is always silent — runtime behaviour is unchanged either way.
+
+## Compile-time validation
+
+When using the default `ToggleParser` with the `AdditionalFiles` entry in place, the Roslyn analyzer catches missing config entries at build time. Any `[Toggle]`-decorated method whose name has no matching entry in the `Toggles` section produces a compiler error (`FTRIO001`) — the build fails rather than the method silently misbehaving at runtime.
+
+```csharp
+// appsettings.json has "SendWelcomeEmail" but not "NewCheckoutFlow"
+
+[Toggle] public void SendWelcomeEmail() { }  // ✓ fine
+[Toggle] public void NewCheckoutFlow()  { }  // ✗ FTRIO001: 'NewCheckoutFlow' has no entry in Toggles
+```
 
 The analyzer is included automatically when you reference the `FtrIO` NuGet package; no separate package is needed.
 

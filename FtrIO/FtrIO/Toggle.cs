@@ -29,7 +29,7 @@
             [Argument(Source.Target)] Func<object[], object> target,
             [Argument(Source.ReturnType)] Type returnType)
         {
-            IToggleParser parser = new ToggleParser();
+            IToggleParser parser = ToggleParserProvider.Instance;
 
             if (parser.GetToggleStatus(name))
             {
