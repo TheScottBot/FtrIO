@@ -15,6 +15,12 @@ Gate method execution from config — no `if` statements, no wrapper classes. De
 dotnet add package FtrIO
 ```
 
+## Why FtrIO?
+
+- **Zero call-site noise.** `[Toggle]` is woven directly into the method's IL by AspectInjector at compile time. A toggled method looks and calls exactly like a normal method — no `if (featureFlags.IsEnabled(...))`, no injected service, no wrapper at every call site. Remove the attribute and the method is back to normal.
+- **appsettings.json as a read-through cache.** Other libraries make your app depend on an external flag service being online. FtrIO flips this: providers run in the background and write their state into `appsettings.json`; `ToggleParser` always reads from the file. If the remote source goes offline, the last known state is served automatically from disk — no fallback code, no circuit breaker, no stale-cache TTL to configure.
+- **Escape hatch built in.** The same `appsettings.json` you already deploy works as a fully functional toggle store without any provider. Swap from a static file to Azure App Config (or back) without touching a single call site.
+
 ---
 
 ## Simple path — appsettings.json
