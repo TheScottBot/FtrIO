@@ -187,14 +187,18 @@ namespace FtrIOTests.Integration
         {
             // The woven Around advice runs synchronously before the async state machine starts,
             // so the exception escapes the call site directly — it is NOT a faulted Task.
+#pragma warning disable CS4014 // Task discarded intentionally — exception is thrown before the Task is created
             Assert.Throws<ToggleDoesNotExistException>(() => FakeAsyncMethodWithMissingKey());
+#pragma warning restore CS4014
         }
 
         [Test]
         public void ToggleAsyncAttribute_ThrowsToggleParsedOutOfRangeException_WhenValueIsUnparseable()
         {
             // Same: exception is synchronous, not wrapped in the returned Task.
+#pragma warning disable CS4014
             Assert.Throws<ToggleParsedOutOfRangeException>(() => FakeAsyncMethodWithUnparseableValue());
+#pragma warning restore CS4014
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
