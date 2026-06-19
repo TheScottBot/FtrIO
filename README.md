@@ -224,6 +224,10 @@ If `FtrIO:ReloadOnChange` is absent or `false`, the file is read once and the co
 
 > **Note:** Hot-reload only applies when using the default `ToggleParser`. If you supply a custom `IToggleParser` via `ToggleParserProvider.Configure`, reload behaviour is entirely your responsibility.
 
+## Companion tooling
+
+[**ftrio-onetwo**](https://github.com/TheScottBot/ftrio-onetwo) is a command-line utility that supplements this library. See the [ftrio-onetwo repository](https://github.com/TheScottBot/ftrio-onetwo) for installation and usage instructions.
+
 ## `appsettings.json` is optional
 
 `appsettings.json` doesn't have to exist. If it's missing entirely, nothing has been explicitly toggled off, so every `[Toggle]`-decorated method and every `ExecuteMethodIfToggleOn` call runs normally - `GetToggleStatus` returns `true` for any key in that case.
