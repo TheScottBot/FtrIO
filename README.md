@@ -194,6 +194,33 @@ public class TimeWindowStrategy : IToggleDecisionStrategy
 
 Providers let toggle state be driven by external sources — HTTP endpoints, Azure App Config, environment variables — while `appsettings.json` remains the single source of truth for all reads.
 
+```mermaid
+flowchart LR
+    subgraph providers ["Providers  (write-only, background)"]
+        http["HttpToggleParser"]
+        azure["AzureAppConfigToggleParser"]
+        env["EnvironmentVariableToggleParser"]
+    end
+
+    buffer(["ToggleProviderBuffer\nflush every N seconds"])
+    file[/"appsettings.json\n— source of truth —"\]
+
+    subgraph read ["Read path  (every toggle check)"]
+        parser["ToggleParser"]
+        toggle["[Toggle] / [ToggleAsync]\nExecuteMethodIfToggleOn"]
+    end
+
+    http  -->|Stage| buffer
+    azure -->|Stage| buffer
+    env   -->|Stage| buffer
+    buffer -->|"atomic write\n(tmp → replace)"| file
+    file  -.->|"ReloadOnChange\nfile watcher"| parser
+    parser --> toggle
+
+    style file fill:#2d1f3d,stroke:#ff69b4,color:#ff69b4,font-weight:bold
+    style buffer fill:#1f2937,stroke:#8b949e,color:#e6edf3
+```
+
 **How it works:** providers push updates into a `ToggleProviderBuffer`; the buffer flushes to `appsettings.json` on a configurable interval; `ToggleParser` reads from `appsettings.json` as normal. If a provider goes offline, the last flushed state in the file is served automatically. Existing `[Toggle]`, `[ToggleAsync]`, and `ExecuteMethodIfToggleOn` call sites are completely unchanged.
 
 > **`ReloadOnChange: true` is mandatory when using providers.** Without it, `ToggleParser` reads the file once at startup and never picks up the values providers flush to it.
