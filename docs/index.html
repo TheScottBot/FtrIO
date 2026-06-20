@@ -721,10 +721,19 @@ dev-machine/appsettings.json    <span class="cm">← dev toggle state</span></co
       <text x="473" y="148" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace" font-style="italic">provider offline → last state persists</text>
     </svg>
 
+    <h3><code>ToggleProviderBuffer</code> — the one required piece</h3>
+    <p>Everything in the provider pipeline flows through one object. Create it once at startup and pass it to every provider you use:</p>
+    <pre><code><span class="kw">var</span> <span class="nm">buffer</span> <span class="pu">=</span> <span class="kw">new</span> <span class="ty">ToggleProviderBuffer</span><span class="pu">();</span></code></pre>
+    <div class="note">
+      <strong>This single line is what enables real-time toggle updates.</strong> The buffer is the bridge between every provider (which writes) and <code>appsettings.json</code> (which <code>ToggleParser</code> reads). Without it, toggle state is fixed at whatever was in the file at startup. With it, any provider can push updates that your running app sees on the next flush — no restart, no redeploy.
+    </div>
+    <p>The buffer reads <code>FlushInterval</code> from <code>appsettings.json</code> automatically, serialises all file writes so providers never race each other, and performs atomic replacement (tmp file → replace) so a crash mid-write can never corrupt the file. Call <code>buffer.Dispose()</code> at shutdown to flush any remaining staged changes before the process exits.</p>
+    <p><strong>Write storms:</strong> staging uses a <code>ConcurrentDictionary</code> — rapid successive updates to the same key collapse to the last value before flush. If a write is in progress when the timer fires, that tick is skipped; staged values accumulate for the next tick and are never dropped.</p>
+
     <h3>Configuration</h3>
     <pre><code><span class="pu">{</span>
   <span class="st">"FtrIO"</span><span class="pu">:</span> <span class="pu">{</span>
-    <span class="st">"ReloadOnChange"</span><span class="pu">:</span> <span class="kw">true</span><span class="pu">,</span>   <span class="cm">// recommended when using providers</span>
+    <span class="st">"ReloadOnChange"</span><span class="pu">:</span> <span class="kw">true</span><span class="pu">,</span>   <span class="cm">// mandatory when using providers</span>
     <span class="st">"FlushInterval"</span><span class="pu">:</span> <span class="nm">5</span>         <span class="cm">// seconds between buffer flushes, default 5</span>
   <span class="pu">},</span>
   <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span>
@@ -747,11 +756,6 @@ dev-machine/appsettings.json    <span class="cm">← dev toggle state</span></co
         </tr>
       </tbody>
     </table>
-
-    <h3><code>ToggleProviderBuffer</code></h3>
-    <p>The buffer is the central piece — create it once at startup and pass it to each provider. It reads <code>FlushInterval</code> from <code>appsettings.json</code> automatically, serialises file writes, and performs atomic replacement so a crash mid-write can never corrupt the file.</p>
-    <p><strong>Write storms:</strong> staging uses a <code>ConcurrentDictionary</code> — rapid successive updates to the same key collapse to the last value before flush. If a write is in progress when the timer fires, that tick is skipped; staged values accumulate for the next tick and are never dropped.</p>
-    <p>Call <code>buffer.Dispose()</code> at shutdown to flush any remaining staged changes before the process exits.</p>
 
     <h3>HTTP provider</h3>
     <pre><code>dotnet add package FtrIO.Providers.Http</code></pre>
