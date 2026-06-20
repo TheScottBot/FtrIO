@@ -56,6 +56,8 @@ dotnet add package FtrIO
 | **Call-site syntax** | `[Toggle]` attribute, zero noise | SDK call at every site | `if (await _fm.IsEnabledAsync(...))` | SDK call at every site |
 | **Works offline** | ✅ always (file-backed) | ❌ needs SDK fallback config | ✅ | ❌ needs SDK fallback config |
 | **Compile-time validation** | ✅ Roslyn analyzer | ❌ | ❌ | ❌ |
+| **Codebase audit / drift detection** | ✅ [ftrio-onetwo](https://github.com/TheScottBot/ftrio-onetwo) CLI | ❌ | ❌ | ❌ |
+| **Management UI** | ✅ [Toaster](https://github.com/TheScottBot/FtrIO.Toaster), self-hosted | ✅ SaaS dashboard | ❌ | ✅ SaaS dashboard |
 | **Percentage rollout** | ✅ | ✅ | ✅ | ✅ |
 | **Self-hosted / no vendor** | ✅ | ❌ paid SaaS | ✅ | ✅ (or SaaS) |
 | **Cost** | Free, OSS | Paid SaaS | Free, OSS | Free tier / paid SaaS |
