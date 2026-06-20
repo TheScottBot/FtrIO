@@ -842,7 +842,20 @@ FTRIO__Toggles__NewCheckout=50%</code></pre>
   <section id="tooling">
     <h2><span class="icon">🛠️</span> Companion tooling</h2>
     <h3>ftrio-onetwo</h3>
-    <p><a href="https://github.com/TheScottBot/ftrio-onetwo">ftrio-onetwo</a> is a command-line utility that supplements this library — see the repository for installation and usage instructions.</p>
+    <p><a href="https://github.com/TheScottBot/ftrio-onetwo">ftrio-onetwo</a> is a .NET CLI tool that scans a project directory for FtrIO toggle usage and reports the current state of every toggle. It walks the source tree, finds every <code>[Toggle]</code>, <code>[ToggleAsync]</code>, <code>ExecuteMethodIfToggleOn</code>, and <code>ExecuteMethodIfToggleOnAsync</code> reference, cross-references each against <code>appsettings.json</code>, and outputs a table with the file and line number for each — showing the full toggle state, not just on/off:</p>
+
+    <table>
+      <thead><tr><th>State</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>ON</code></td><td>Toggle is <code>true</code> or <code>1</code> in <code>appsettings.json</code></td></tr>
+        <tr><td><code>OFF</code></td><td>Toggle is <code>false</code> or <code>0</code> in <code>appsettings.json</code></td></tr>
+        <tr><td><code>20%</code></td><td>Percentage rollout — the raw value (e.g. <code>"20%"</code>) is shown directly</td></tr>
+        <tr><td><code>BLUE</code> / <code>GREEN</code></td><td>Blue-green deployment slot — shown in uppercase</td></tr>
+        <tr><td><code>MISSING</code></td><td>Toggle key is used in code but has no entry in any <code>appsettings*.json</code> file</td></tr>
+      </tbody>
+    </table>
+
+    <pre><code>ftrio-onetwo C:\Projects\MyApp --markdown toggles.md</code></pre>
 
     <h3>FtrIO.Toaster</h3>
     <p><a href="https://github.com/TheScottBot/FtrIO.Toaster">FtrIO.Toaster</a> is a lightweight web app for managing toggles directly without editing <code>appsettings.json</code> by hand. It writes toggle values through <code>ToggleProviderBuffer</code> using the same buffer logic your app already uses — changes flush to <code>appsettings.json</code> on the configured interval and are picked up live via <code>ReloadOnChange</code>.</p>
