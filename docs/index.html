@@ -383,6 +383,80 @@
     </ul>
   </section>
 
+  <!-- COMPARISON TABLE -->
+  <section id="compare">
+    <h2><span class="icon">⚖️</span> How it compares</h2>
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th><strong>FtrIO</strong></th>
+          <th>LaunchDarkly</th>
+          <th>Microsoft.FeatureManagement</th>
+          <th>Flagsmith</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Call-site syntax</strong></td>
+          <td><code>[Toggle]</code> attribute, zero noise</td>
+          <td>SDK call at every site</td>
+          <td><code>if (await _fm.IsEnabledAsync(...))</code></td>
+          <td>SDK call at every site</td>
+        </tr>
+        <tr>
+          <td><strong>Works offline</strong></td>
+          <td>✅ always (file-backed)</td>
+          <td>❌ needs SDK fallback config</td>
+          <td>✅</td>
+          <td>❌ needs SDK fallback config</td>
+        </tr>
+        <tr>
+          <td><strong>Compile-time validation</strong></td>
+          <td>✅ Roslyn analyzer</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+        </tr>
+        <tr>
+          <td><strong>Codebase audit / drift detection</strong></td>
+          <td>✅ <a href="#onetwo">ftrio-onetwo</a> CLI</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+        </tr>
+        <tr>
+          <td><strong>Management UI</strong></td>
+          <td>✅ <a href="#toaster">Toaster</a>, self-hosted</td>
+          <td>✅ SaaS dashboard</td>
+          <td>❌</td>
+          <td>✅ SaaS dashboard</td>
+        </tr>
+        <tr>
+          <td><strong>Percentage rollout</strong></td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+        </tr>
+        <tr>
+          <td><strong>Self-hosted / no vendor</strong></td>
+          <td>✅</td>
+          <td>❌ paid SaaS</td>
+          <td>✅</td>
+          <td>✅ (or SaaS)</td>
+        </tr>
+        <tr>
+          <td><strong>Cost</strong></td>
+          <td>Free, OSS</td>
+          <td>Paid SaaS</td>
+          <td>Free, OSS</td>
+          <td>Free tier / paid SaaS</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
   <p class="path-divider">Simple path — appsettings.json</p>
 
   <!-- QUICK START -->
