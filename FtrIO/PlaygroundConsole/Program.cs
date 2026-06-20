@@ -25,11 +25,21 @@ ToggleParserProvider.Configure(new StrategyToggleParser(
     new BlueGreenStrategy("blue", "blue", "green")
 ));
 
-Playground.TestingTrue();
-Playground.TestingFalse();
-Playground.TestingNoAttribute();
-Playground.TestingPercentage();
-Playground.TestingBlueGreen();
+var watchedFile = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+Console.WriteLine($"Watching: {watchedFile}");
+Console.WriteLine("Edit that file to see toggle changes live. Ctrl+C to exit.");
+Console.WriteLine(new string('-', 60));
+
+while (true)
+{
+    Console.WriteLine($"\n[{DateTime.Now:HH:mm:ss}]");
+    Playground.TestingTrue();
+    Playground.TestingFalse();
+    Playground.TestingNoAttribute();
+    Playground.TestingPercentage();
+    Playground.TestingBlueGreen();
+    Thread.Sleep(2000);
+}
 
 // Dispose flushes any remaining staged changes before exit.
 buffer.Dispose();
