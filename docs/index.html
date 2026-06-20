@@ -1120,16 +1120,20 @@ docker compose up -d</code></pre>
 dotnet tool install -g FtrIO.OneTwo --add-source ./FtrIO.OneTwo/nupkg</code></pre>
 
     <h3>Usage</h3>
-    <pre><code>ftrio-onetwo [path] [--env &lt;name&gt;] [--markdown &lt;output.md&gt;]</code></pre>
+    <pre><code>ftrio-onetwo [--source &lt;path&gt;] [--config &lt;path&gt;] [--env &lt;name&gt;] [--markdown &lt;output.md&gt;]</code></pre>
     <table>
       <thead><tr><th>Argument</th><th>Description</th></tr></thead>
       <tbody>
-        <tr><td><code>path</code></td><td>Path to the project or solution directory. Defaults to the current directory.</td></tr>
-        <tr><td><code>--env &lt;name&gt;</code></td><td>Target a specific environment. Reads <code>appsettings.&lt;name&gt;.json</code> as an overlay on top of the base config.</td></tr>
+        <tr><td><code>--source &lt;path&gt;</code></td><td>Directory to scan for toggle usage in <code>.cs</code> files. Defaults to the current directory.</td></tr>
+        <tr><td><code>--config &lt;path&gt;</code></td><td>Directory to search for <code>appsettings*.json</code> files. Defaults to <code>--source</code> when not specified — so source and config can live in entirely different locations.</td></tr>
+        <tr><td><code>--env &lt;name&gt;</code></td><td>Show a single environment using the base+overlay model. Omit to show all <code>appsettings</code> files as separate tables.</td></tr>
         <tr><td><code>--markdown &lt;file&gt;</code></td><td>Also write the results to a markdown file at the given path.</td></tr>
         <tr><td><code>--help</code> / <code>-h</code></td><td>Show usage.</td></tr>
       </tbody>
     </table>
+    <div class="note">
+      <strong>Positional shorthand:</strong> <code>--source</code> and <code>--config</code> can also be passed as positional arguments — the first positional value is the source path, the second is the config path. E.g. <code>ftrio-onetwo "C:\Projects\MyApp" "C:\Server\configs"</code>.
+    </div>
 
     <h3>What it detects</h3>
     <table>
@@ -1179,17 +1183,28 @@ dotnet tool install -g FtrIO.OneTwo --add-source ./FtrIO.OneTwo/nupkg</code></pr
 4 toggle(s). 1 ON, 0 OFF, 1 PERCENTAGE, 1 BLUE/GREEN, 1 MISSING.</code></pre>
 
     <p>With <code>--env Staging</code>, a single merged table is shown applying the overlay:</p>
-    <pre><code>ftrio-onetwo C:\Projects\MyApp --env Staging</code></pre>
+    <pre><code>ftrio-onetwo --source C:\Projects\MyApp --env Staging</code></pre>
 
     <h3>Multi-environment support</h3>
-    <p>Without <code>--env</code>, ftrio-onetwo finds every <code>appsettings*.json</code> in the project tree and renders a separate table for each. The environment name is derived from the filename — <code>appsettings.Staging.json</code> → <code>Staging</code>. Each table header includes the full path so there is no ambiguity.</p>
+    <p>Without <code>--env</code>, ftrio-onetwo finds every <code>appsettings*.json</code> in the <code>--config</code> directory (defaulting to <code>--source</code>) and renders a separate table for each. The environment name is derived from the filename — <code>appsettings.Staging.json</code> → <code>Staging</code>. Each table header includes the full path so there is no ambiguity.</p>
     <p>With <code>--env</code>, the tool applies FtrIO's overlay model: the environment-specific file's values win, and the base <code>appsettings.json</code> fills any gaps — the same resolution logic your app uses at runtime.</p>
     <div class="note">
       <strong>Note:</strong> ftrio-onetwo deliberately ignores <code>ASPNETCORE_ENVIRONMENT</code>, matching FtrIO's own behaviour. Use <code>--env</code> on the command line to target a specific environment.
     </div>
 
+    <h3>Separating source and config paths</h3>
+    <p>In real-world deployments the source tree and the live config files often live in different places — e.g. source on a dev machine and <code>appsettings.json</code> on a build output or server share. Use <code>--config</code> to point at the config location independently:</p>
+    <pre><code><span class="cm"># Source and config in the same place (default)</span>
+ftrio-onetwo --source C:\Projects\MyApp
+
+<span class="cm"># Config lives in the build output, not alongside source</span>
+ftrio-onetwo --source C:\Projects\MyApp --config C:\Projects\MyApp\bin\Debug\net10.0
+
+<span class="cm"># Config on a remote share or separate server path</span>
+ftrio-onetwo --source C:\Projects\MyApp --config C:\Server\configs --env Production</code></pre>
+
     <h3>Generating a markdown report</h3>
-    <pre><code>ftrio-onetwo C:\Projects\MyApp --env Production --markdown toggles.md</code></pre>
+    <pre><code>ftrio-onetwo --source C:\Projects\MyApp --config C:\Server\configs --env Production --markdown toggles.md</code></pre>
     <p>Writes the same table output to a <code>.md</code> file — useful for including toggle state snapshots in PRs or release notes.</p>
   </section>
 
