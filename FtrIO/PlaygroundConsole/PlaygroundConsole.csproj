@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\FtrIO\FtrIO.csproj" />
+      <ProjectReference Include="..\FtrIO.Analyzers\FtrIO.Analyzers.csproj"
+                        ReferenceOutputAssembly="false"
+                        OutputItemType="Analyzer" />
+      <PackageReference Include="AspectInjector" Version="2.9.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="appsettings.Development.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <AdditionalFiles Include="appsettings.json" />
+    </ItemGroup>
+
+</Project>

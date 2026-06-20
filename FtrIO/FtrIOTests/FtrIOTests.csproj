@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
+      <PackageReference Include="NUnit" Version="3.14.0" />
+      <PackageReference Include="NUnit3TestAdapter" Version="6.2.0" />
+      <PackageReference Include="AspectInjector" Version="2.9.0" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\FtrIO\FtrIO.csproj" />
+      <ProjectReference Include="..\FtrIO.Providers.Http\FtrIO.Providers.Http.csproj" />
+      <ProjectReference Include="..\FtrIO.Analyzers\FtrIO.Analyzers.csproj"
+                        OutputItemType="Analyzer" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <AdditionalFiles Include="appsettings.json" />
+    </ItemGroup>
+
+</Project>

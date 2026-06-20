@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FtrIO — .NET Feature Toggles</title>
+  <meta name="description" content="FtrIO is a .NET feature-toggle library. Gate method execution via appsettings.json — no if statements, no boilerplate." />
+  <link rel="icon" type="image/png" href="assets/ftrio-icon-128.png" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #ff69b4;
+      --accent-dim: rgba(255, 105, 180, 0.15);
+      --code-bg: #1f2937;
+      --radius: 8px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      background: rgba(13,17,23,0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      z-index: 100;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--text); }
+    .nav-logo img { height: 28px; }
+    .nav-links { display: flex; gap: 1.5rem; font-size: 0.9rem; color: var(--muted); }
+    .nav-links a { color: var(--muted); }
+    .nav-links a:hover { color: var(--text); }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 5rem 2rem 4rem;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .hero img.banner {
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 2rem;
+    }
+    .hero h1 {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #e6edf3 30%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 520px;
+      margin: 0 auto 2rem;
+    }
+    .hero-badges { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2.5rem; }
+    .hero-ctas { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.6rem 1.3rem;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: opacity .15s;
+    }
+    .btn:hover { opacity: 0.85; text-decoration: none; }
+    .btn-primary { background: var(--accent); color: #0d1117; }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+    /* INSTALL */
+    .install-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.9rem 1.2rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 0 auto 2.5rem;
+    }
+    .install-block code {
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.95rem;
+      color: var(--accent);
+    }
+    .copy-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      padding: 0.2rem 0.55rem;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .copy-btn:hover { color: var(--text); border-color: var(--text); }
+
+    /* MAIN LAYOUT */
+    main { max-width: 900px; margin: 0 auto; padding: 0 2rem 6rem; }
+
+    /* SECTIONS */
+    section { margin-bottom: 4rem; }
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    h2 .icon { font-size: 1.2rem; }
+    h3 { font-size: 1.05rem; font-weight: 600; margin: 1.5rem 0 0.6rem; color: var(--text); }
+
+    p { color: var(--muted); margin-bottom: 0.9rem; }
+    p strong { color: var(--text); }
+
+    /* CODE */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.3rem;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+    }
+    pre code {
+      font-family: "SF Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.88rem;
+      line-height: 1.7;
+      color: var(--text);
+    }
+    code { font-family: "SF Mono", "Fira Code", Consolas, monospace; }
+    p code, li code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1em 0.4em;
+      font-size: 0.85em;
+      color: var(--accent);
+    }
+
+    /* FEATURE GRID */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.35rem;
+      transition: border-color .2s;
+    }
+    .feature-card:hover { border-color: var(--accent); }
+    .feature-card .emoji { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
+    .feature-card h3 { margin: 0 0 0.4rem; font-size: 0.95rem; color: var(--text); }
+    .feature-card p { font-size: 0.875rem; margin: 0; }
+
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 0.9rem; }
+    th {
+      text-align: left;
+      padding: 0.6rem 1rem;
+      background: var(--surface);
+      color: var(--muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+    td code { color: var(--accent); }
+    td:first-child { color: var(--text); font-weight: 500; }
+    tr:last-child td { border-bottom: none; }
+
+    /* TFM BADGES */
+    .tfm-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+    .tfm-badge {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 20px;
+      padding: 0.2rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* NOTE */
+    .note {
+      background: var(--accent-dim);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 0.85rem 1.1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .note strong { color: var(--text); }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--text); }
+
+    /* PATH DIVIDER */
+    .path-divider {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 3.5rem 0 2rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--accent-dim);
+    }
+
+    /* Syntax highlight helpers */
+    .kw  { color: #ff79c6; }
+    .cm  { color: #6272a4; font-style: italic; }
+    .st  { color: #f1fa8c; }
+    .at  { color: #50fa7b; }
+    .ty  { color: #8be9fd; }
+    .nm  { color: #e6edf3; }
+    .pu  { color: #e6edf3; }
+    .xml-tag  { color: #ff79c6; }
+    .xml-attr { color: #50fa7b; }
+    .xml-val  { color: #f1fa8c; }
+    .xml-cm   { color: #6272a4; font-style: italic; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">
+    <img src="assets/ftrio-icon-128.png" alt="FtrIO" />
+    FtrIO
+  </span>
+  <div class="nav-links">
+    <a href="#quickstart">Quick start</a>
+    <a href="#async">Async</a>
+    <a href="#hotreload">Hot-reload</a>
+    <a href="#environments">Environments</a>
+    <a href="#strategies">Strategies</a>
+    <a href="#providers">Providers</a>
+    <a href="#analyzer">Analyzer</a>
+    <a href="#exceptions">Exceptions</a>
+    <a href="#ecosystem">Ecosystem</a>
+    <a href="https://github.com/FtrOnOff/FtrIO">GitHub</a>
+    <a href="https://www.nuget.org/packages/FtrIO">NuGet</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <img class="banner" src="assets/ftrio-banner.png" alt="FtrIO banner" />
+  <h1>Feature Toggles for .NET</h1>
+  <p>Gate method execution via <code>appsettings.json</code> — one attribute, no <code>if</code> statements, no boilerplate.</p>
+
+  <div class="hero-badges">
+    <a href="https://www.nuget.org/packages/FtrIO">
+      <img src="https://img.shields.io/nuget/v/FtrIO?color=ff69b4&logo=nuget" alt="NuGet version" />
+    </a>
+    <a href="https://github.com/FtrOnOff/FtrIO/actions">
+      <img src="https://github.com/FtrOnOff/FtrIO/actions/workflows/dotnet.yml/badge.svg" alt="CI" />
+    </a>
+    <img src="https://img.shields.io/badge/license-MIT-blue" alt="License" />
+  </div>
+
+  <div class="install-block">
+    <code>dotnet add package FtrIO</code>
+    <button class="copy-btn" onclick="copyInstall(this)">copy</button>
+  </div>
+
+  <div class="hero-ctas">
+    <a class="btn btn-primary" href="#quickstart">Get started</a>
+    <a class="btn btn-secondary" href="https://github.com/FtrOnOff/FtrIO">View on GitHub</a>
+  </div>
+</div>
+
+<main>
+
+  <!-- FEATURES -->
+  <section>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="emoji">🎛️</span>
+        <h3>Attribute-driven</h3>
+        <p>Decorate any method with <code>[Toggle]</code> and it becomes config-gated automatically.</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🔍</span>
+        <h3>Compile-time safety</h3>
+        <p>The bundled Roslyn analyzer catches missing config entries at build time, not at runtime.</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">📦</span>
+        <h3>Zero boilerplate</h3>
+        <p>No wrapper classes, no service registrations, no <code>if</code> statements around every call site.</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">⚡</span>
+        <h3>Async support</h3>
+        <p><code>[ToggleAsync]</code> and <code>ExecuteMethodIfToggleOnAsync</code> gate async methods safely without null Task pitfalls.</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🔌</span>
+        <h3>DI / custom parser</h3>
+        <p>Swap in any <code>IToggleParser</code> via <code>ToggleParserProvider.Configure()</code> at startup — including parsers resolved from your DI container.</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🎲</span>
+        <h3>Strategy decisions</h3>
+        <p>Percentage rollouts, blue-green slots, and custom decision logic via <code>StrategyToggleParser</code> — no call-site changes required.</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🌐</span>
+        <h3>Dynamic providers</h3>
+        <p>HTTP endpoints, Azure App Config, and env vars push updates to <code>appsettings.json</code> via a buffered pipeline. The file is always the source of truth.</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🎯</span>
+        <h3>Multi-target</h3>
+        <p>Ships TFMs for .NET 6, 7, 8, 9 and 10 in one package.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TWO PATHS CALLOUT -->
+  <section>
+    <div class="note">
+      <strong>Two paths, same call sites.</strong>
+      Use the <strong>simple path</strong> — <code>appsettings.json</code> + <code>[Toggle]</code> — when toggle state is managed at deploy time. Switch to <strong>dynamic providers</strong> (HTTP, Azure App Config, env vars) when you need toggle state to change at runtime without a redeploy. Either way, <code>[Toggle]</code>, <code>[ToggleAsync]</code>, and <code>ExecuteMethodIfToggleOn</code> work identically — no call-site changes needed when switching between paths.
+    </div>
+  </section>
+
+  <!-- WHY FTRIO -->
+  <section>
+    <h2><span class="icon">💡</span> Why FtrIO?</h2>
+    <ul style="list-style:none; padding:0; display:flex; flex-direction:column; gap:1rem;">
+      <li style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.2rem;">
+        <p style="margin:0;"><strong>Zero call-site noise.</strong> <code>[Toggle]</code> is woven directly into the method's IL at compile time. A toggled method looks and calls like any normal method — no <code>if (flags.IsEnabled(...))</code>, no injected service, no wrapper at every call site. Remove the attribute and the method is back to normal.</p>
+      </li>
+      <li style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.2rem;">
+        <p style="margin:0;"><strong><code>appsettings.json</code> as a read-through cache.</strong> Other libraries make your app depend on an external flag service being online. FtrIO flips this: providers run in the background and write their state into <code>appsettings.json</code>; <code>ToggleParser</code> always reads from the file. If the remote source goes offline, the last known state is served automatically from disk — no fallback code, no circuit breaker, no TTL to configure.</p>
+      </li>
+      <li style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.2rem;">
+        <p style="margin:0;"><strong>Escape hatch built in.</strong> The same <code>appsettings.json</code> you already deploy works as a fully functional toggle store without any provider. Swap from a static file to Azure App Config — or back — without touching a single call site.</p>
+      </li>
+    </ul>
+  </section>
+
+  <!-- COMPARISON TABLE -->
+  <section id="compare">
+    <h2><span class="icon">⚖️</span> How it compares</h2>
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th><strong>FtrIO</strong></th>
+          <th>LaunchDarkly</th>
+          <th>Microsoft.FeatureManagement</th>
+          <th>Flagsmith</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Call-site syntax</strong></td>
+          <td><code>[Toggle]</code> attribute, zero noise</td>
+          <td>SDK call at every site</td>
+          <td><code>if (await _fm.IsEnabledAsync(...))</code></td>
+          <td>SDK call at every site</td>
+        </tr>
+        <tr>
+          <td><strong>Works offline</strong></td>
+          <td>✅ always (file-backed)</td>
+          <td>❌ needs SDK fallback config</td>
+          <td>✅</td>
+          <td>❌ needs SDK fallback config</td>
+        </tr>
+        <tr>
+          <td><strong>Compile-time validation</strong></td>
+          <td>✅ Roslyn analyzer</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+        </tr>
+        <tr>
+          <td><strong>Codebase audit / drift detection</strong></td>
+          <td>✅ <a href="#onetwo">ftrio-onetwo</a> CLI</td>
+          <td>❌</td>
+          <td>❌</td>
+          <td>❌</td>
+        </tr>
+        <tr>
+          <td><strong>Management UI</strong></td>
+          <td>✅ <a href="#toaster">Toaster</a>, self-hosted</td>
+          <td>✅ SaaS dashboard</td>
+          <td>❌</td>
+          <td>✅ SaaS dashboard</td>
+        </tr>
+        <tr>
+          <td><strong>Percentage rollout</strong></td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+          <td>✅</td>
+        </tr>
+        <tr>
+          <td><strong>Self-hosted / no vendor</strong></td>
+          <td>✅</td>
+          <td>❌ paid SaaS</td>
+          <td>✅</td>
+          <td>✅ (or SaaS)</td>
+        </tr>
+        <tr>
+          <td><strong>Cost</strong></td>
+          <td>Free, OSS</td>
+          <td>Paid SaaS</td>
+          <td>Free, OSS</td>
+          <td>Free tier / paid SaaS</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <p class="path-divider">Simple path — appsettings.json</p>
+
+  <!-- QUICK START -->
+  <section id="quickstart">
+    <h2><span class="icon">🚀</span> Quick start</h2>
+
+    <h3>1. Install the package</h3>
+    <pre><code>dotnet add package FtrIO</code></pre>
+
+    <h3>2. Add AspectInjector to your consuming project</h3>
+    <p>AspectInjector weaves <code>[Toggle]</code> IL at compile time, per project. Any project that decorates its own methods needs this:</p>
+    <pre><code><span class="xml-tag">&lt;PackageReference</span> <span class="xml-attr">Include</span>=<span class="xml-val">"AspectInjector"</span> <span class="xml-attr">Version</span>=<span class="xml-val">"2.9.0"</span> <span class="xml-tag">/&gt;</span></code></pre>
+
+    <h3>3. Create <code>appsettings.json</code></h3>
+    <pre><code>{
+  <span class="st">"Toggles"</span>: {
+    <span class="st">"SendWelcomeEmail"</span>: <span class="kw">true</span>,
+    <span class="st">"NewCheckoutFlow"</span>: <span class="kw">false</span>
+  }
+}</code></pre>
+
+    <h3>4. Copy it to the build output</h3>
+    <pre><code><span class="xml-tag">&lt;ItemGroup&gt;</span>
+  <span class="xml-tag">&lt;None</span> <span class="xml-attr">Update</span>=<span class="xml-val">"appsettings.json"</span><span class="xml-tag">&gt;</span>
+    <span class="xml-tag">&lt;CopyToOutputDirectory&gt;</span>Always<span class="xml-tag">&lt;/CopyToOutputDirectory&gt;</span>
+  <span class="xml-tag">&lt;/None&gt;</span>
+<span class="xml-tag">&lt;/ItemGroup&gt;</span></code></pre>
+
+    <h3>5. Decorate and call</h3>
+    <pre><code><span class="kw">using</span> <span class="nm">FtrIO</span><span class="pu">;</span>
+
+<span class="kw">public class</span> <span class="ty">EmailService</span>
+<span class="pu">{</span>
+    <span class="at">[Toggle]</span>
+    <span class="kw">public void</span> <span class="nm">SendWelcomeEmail</span><span class="pu">()</span>
+    <span class="pu">{</span>
+        <span class="cm">// runs only when "SendWelcomeEmail": true in config</span>
+    <span class="pu">}</span>
+<span class="pu">}</span></code></pre>
+
+    <p>Call it like any normal method — FtrIO intercepts the call via IL weaving and checks the config before the body runs. No <code>if</code>, no wrapper, nothing extra at the call site.</p>
+
+    <div class="note">
+      <strong>Local functions won't work.</strong> The compiler name-mangles them (e.g. <code>&lt;&lt;Main&gt;$&gt;g__MyFunc|0_0</code>), so name-based config resolution fails. Use real named methods on a class instead.
+    </div>
+  </section>
+
+  <!-- TARGETS -->
+  <section>
+    <h2><span class="icon">🎯</span> Target frameworks</h2>
+    <p>One NuGet package, five targets:</p>
+    <div class="tfm-row">
+      <span class="tfm-badge">.NET 6</span>
+      <span class="tfm-badge">.NET 7</span>
+      <span class="tfm-badge">.NET 8</span>
+      <span class="tfm-badge">.NET 9</span>
+      <span class="tfm-badge">.NET 10</span>
+    </div>
+  </section>
+
+  <!-- ANALYZER -->
+  <section id="analyzer">
+    <h2><span class="icon">🔍</span> Compile-time validation</h2>
+    <p>FtrIO ships a Roslyn analyzer (<strong>FTRIO001</strong>) that catches missing config entries at build time. If you register your <code>appsettings.json</code> as an <code>AdditionalFile</code>, any <code>[Toggle]</code>-decorated method whose name has no matching entry in <code>Toggles</code> produces a compiler error — the build fails rather than the method misbehaving silently at runtime.</p>
+
+    <h3>Opt in</h3>
+    <pre><code><span class="xml-tag">&lt;ItemGroup&gt;</span>
+  <span class="xml-tag">&lt;AdditionalFiles</span> <span class="xml-attr">Include</span>=<span class="xml-val">"appsettings.json"</span> <span class="xml-tag">/&gt;</span>
+<span class="xml-tag">&lt;/ItemGroup&gt;</span></code></pre>
+
+    <p>Without this line the analyzer is silent — runtime behaviour is unchanged. The analyzer is included automatically with the NuGet package; no separate install is needed.</p>
+
+    <h3>Example</h3>
+    <pre><code><span class="xml-tag">&lt;!--</span> <span class="xml-cm">appsettings.json has Toggles.SendWelcomeEmail but not Toggles.NewCheckoutFlow</span> <span class="xml-tag">--&gt;</span>
+
+<span class="at">[Toggle]</span> <span class="kw">public void</span> <span class="nm">SendWelcomeEmail</span><span class="pu">()</span> <span class="pu">{}</span>  <span class="cm">// ✓ fine</span>
+<span class="at">[Toggle]</span> <span class="kw">public void</span> <span class="nm">NewCheckoutFlow</span><span class="pu">()</span>  <span class="pu">{}</span>  <span class="cm">// ✗ FTRIO001: 'NewCheckoutFlow' has no entry in Toggles</span></code></pre>
+  </section>
+
+  <!-- ASYNC -->
+  <section id="async">
+    <h2><span class="icon">⚡</span> Async support</h2>
+
+    <h3><code>[ToggleAsync]</code> attribute</h3>
+    <p>For methods that return <code>Task</code> or <code>Task&lt;T&gt;</code>, use <code>[ToggleAsync]</code> instead of <code>[Toggle]</code>. It gates the method by its own name against config, but handles the "off" path correctly — returning <code>Task.CompletedTask</code> or <code>Task.FromResult(default)</code> rather than <code>null</code>, so the result is always safely awaitable.</p>
+    <pre><code><span class="at">[ToggleAsync]</span>
+<span class="kw">public async</span> <span class="ty">Task</span> <span class="nm">SendWelcomeEmailAsync</span><span class="pu">()</span>
+<span class="pu">{</span>
+    <span class="kw">await</span> <span class="nm">emailClient</span><span class="pu">.</span><span class="nm">SendAsync</span><span class="pu">(...);</span>
+<span class="pu">}</span>
+
+<span class="kw">await</span> <span class="nm">SendWelcomeEmailAsync</span><span class="pu">();</span>  <span class="cm">// safely awaitable whether the toggle is on or off</span></code></pre>
+
+    <div class="note">
+      <strong>Use <code>[ToggleAsync]</code> for async, <code>[Toggle]</code> for sync.</strong> Using <code>[Toggle]</code> on an async method compiles fine but risks a <code>NullReferenceException</code> on await when the toggle is off.
+    </div>
+
+    <h3><code>ExecuteMethodIfToggleOnAsync</code></h3>
+    <p>The manual-control equivalent for async. Accepts <code>Func&lt;Task&gt;</code> and <code>Func&lt;Task&lt;TResult&gt;&gt;</code> and always returns an awaitable result:</p>
+    <pre><code><span class="kw">var</span> <span class="nm">featureToggle</span> <span class="pu">=</span> <span class="kw">new</span> <span class="ty">FeatureToggle</span><span class="pu">&lt;</span><span class="kw">bool</span><span class="pu">&gt;();</span>
+
+<span class="cm">// Gate a Task-returning method</span>
+<span class="kw">await</span> <span class="nm">featureToggle</span><span class="pu">.</span><span class="nm">ExecuteMethodIfToggleOnAsync</span><span class="pu">(</span>
+    <span class="pu">()</span> <span class="pu">=&gt;</span> <span class="nm">emailClient</span><span class="pu">.</span><span class="nm">SendAsync</span><span class="pu">(),</span> <span class="st">"SendWelcomeEmail"</span><span class="pu">);</span>
+
+<span class="cm">// Gate a Task&lt;T&gt;-returning method</span>
+<span class="kw">var</span> <span class="nm">result</span> <span class="pu">=</span> <span class="kw">await</span> <span class="nm">featureToggle</span><span class="pu">.</span><span class="nm">ExecuteMethodIfToggleOnAsync</span><span class="pu">(</span>
+    <span class="pu">()</span> <span class="pu">=&gt;</span> <span class="nm">orderService</span><span class="pu">.</span><span class="nm">PlaceOrderAsync</span><span class="pu">(),</span> <span class="st">"NewCheckoutFlow"</span><span class="pu">);</span></code></pre>
+  </section>
+
+  <!-- HOT RELOAD -->
+  <section id="hotreload">
+    <h2><span class="icon">🔄</span> Hot-reload</h2>
+    <p>By default, <code>ToggleParser</code> reads <code>appsettings.json</code> once at startup. Set <code>ReloadOnChange: true</code> in the <code>FtrIO</code> section to pick up file changes on disk without a restart.</p>
+    <p><strong>This is strongly recommended</strong> for all applications. If you are using any dynamic provider it is <strong>mandatory</strong> — without it, <code>ToggleParser</code> reads the file once and never sees the values providers flush to it.</p>
+    <pre><code><span class="pu">{</span>
+  <span class="st">"FtrIO"</span><span class="pu">:</span> <span class="pu">{</span>
+    <span class="st">"ReloadOnChange"</span><span class="pu">:</span> <span class="kw">true</span>
+  <span class="pu">},</span>
+  <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span>
+    <span class="st">"SendWelcomeEmail"</span><span class="pu">:</span> <span class="kw">true</span>
+  <span class="pu">}</span>
+<span class="pu">}</span></code></pre>
+    <p>When set, <code>ToggleParser</code> attaches a file watcher via <code>Microsoft.Extensions.Configuration</code>. The next call to any <code>[Toggle]</code>-decorated method after the file changes will reflect the updated values — no restart required.</p>
+  </section>
+
+  <!-- MULTI-ENVIRONMENT -->
+  <section id="environments">
+    <h2><span class="icon">🌍</span> Multi-environment support</h2>
+    <p>FtrIO supports unlimited environments. The right approach depends on your infrastructure:</p>
+
+    <h3>Separate servers per environment</h3>
+    <p>This is the common case and requires no special FtrIO configuration. Each server has its own <code>appsettings.json</code> — they are completely independent. Prod server has prod toggles, staging server has staging toggles. There is no upper limit on how many environments or servers you run.</p>
+    <pre><code>prod-server/appsettings.json    <span class="cm">← production toggle state</span>
+staging-server/appsettings.json <span class="cm">← staging toggle state</span>
+dev-machine/appsettings.json    <span class="cm">← dev toggle state</span></code></pre>
+    <p>Each deployment is fully self-contained. <code>[Toggle]</code> call sites read from whichever <code>appsettings.json</code> is local to that server — nothing else to configure.</p>
+
+    <h3>Single machine, multiple environments</h3>
+    <p>When you want to share a base config and override specific keys per environment on one machine, set <code>FtrIO:Environment</code> in <code>appsettings.json</code> to activate an overlay file. <code>ToggleParser</code> layers <code>appsettings.{env}.json</code> on top — env-specific values win, the base fills the gaps.</p>
+    <pre><code><span class="cm">// appsettings.json</span>
+<span class="pu">{</span>
+  <span class="st">"FtrIO"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"ReloadOnChange"</span><span class="pu">:</span> <span class="kw">true</span><span class="pu">,</span> <span class="st">"Environment"</span><span class="pu">:</span> <span class="st">"Staging"</span> <span class="pu">},</span>
+  <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"SendWelcomeEmail"</span><span class="pu">:</span> <span class="kw">true</span><span class="pu">,</span> <span class="st">"NewCheckout"</span><span class="pu">:</span> <span class="kw">false</span> <span class="pu">}</span>
+<span class="pu">}</span>
+
+<span class="cm">// appsettings.Staging.json — only what differs from the base</span>
+<span class="pu">{</span>
+  <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"NewCheckout"</span><span class="pu">:</span> <span class="st">"50%"</span> <span class="pu">}</span>
+<span class="pu">}</span></code></pre>
+    <p>When <code>FtrIO:Environment</code> is set, <code>ToggleProviderBuffer</code> also writes provider flushes to the env file — the base file is never modified by providers in this mode.</p>
+
+    <div class="note">
+      <strong>Important:</strong> FtrIO deliberately ignores <code>ASPNETCORE_ENVIRONMENT</code> and <code>DOTNET_ENVIRONMENT</code> when deciding where the buffer <em>writes</em>. A server's own <code>appsettings.json</code> is its environment — writing to a different file because an env var happens to be set would break single-server deployments. Only <code>FtrIO:Environment</code> in config triggers env-file writes.
+    </div>
+
+    <h3>Remote config sources</h3>
+    <p>For toggle state that lives on a remote server, use a provider. It pulls from the remote source and flushes to the local <code>appsettings.json</code> — works across any number of environments with no file management:</p>
+    <pre><code><span class="cm">// Azure App Config — one store, one label per environment</span>
+<span class="kw">new</span> <span class="ty">AzureAppConfigToggleParser</span><span class="pu">(</span><span class="nm">connectionString</span><span class="pu">,</span> <span class="nm">buffer</span><span class="pu">,</span> <span class="nm">label</span><span class="pu">:</span> <span class="st">"staging"</span><span class="pu">);</span>
+
+<span class="cm">// HTTP config server</span>
+<span class="kw">new</span> <span class="ty">HttpToggleParser</span><span class="pu">(</span><span class="st">"https://config.internal/toggles/staging"</span><span class="pu">,</span> <span class="nm">buffer</span><span class="pu">);</span></code></pre>
+    <p>If the remote source goes offline, the last flushed state in <code>appsettings.json</code> persists automatically — no fallback code needed.</p>
+  </section>
+
+  <!-- DI / CUSTOM PARSER -->
+  <section id="di">
+    <h2><span class="icon">🔌</span> Custom parser / Dependency Injection</h2>
+    <p>By default, <code>[Toggle]</code>, <code>[ToggleAsync]</code>, and <code>ExecuteMethodIfToggleOn</code> all use the built-in <code>ToggleParser</code> which reads from <code>appsettings.json</code>. To swap in a custom <code>IToggleParser</code> — one that reads from a database, a feature-flag service, or a DI container — call <code>ToggleParserProvider.Configure</code> once at application startup before any toggled methods run:</p>
+    <pre><code><span class="kw">using</span> <span class="nm">FtrIO</span><span class="pu">;</span>
+<span class="kw">using</span> <span class="nm">FtrIO.Classes</span><span class="pu">;</span>
+
+<span class="cm">// Manual — use default ToggleParser at a custom path</span>
+<span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">ToggleParser</span><span class="pu">());</span>
+
+<span class="cm">// With Microsoft.Extensions.DependencyInjection</span>
+<span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span>
+    <span class="nm">host</span><span class="pu">.</span><span class="nm">Services</span><span class="pu">.</span><span class="nm">GetRequiredService</span><span class="pu">&lt;</span><span class="ty">IToggleParser</span><span class="pu">&gt;());</span></code></pre>
+
+    <p>If <code>Configure</code> is never called, the default <code>ToggleParser</code> is used automatically — existing consumers don't need to change anything.</p>
+    <p><code>ExecuteMethodIfToggleOn</code> and <code>ExecuteMethodIfToggleOnAsync</code> also accept an <code>IToggleParser</code> directly for per-call control:</p>
+    <pre><code><span class="kw">await</span> <span class="nm">featureToggle</span><span class="pu">.</span><span class="nm">ExecuteMethodIfToggleOnAsync</span><span class="pu">(</span>
+    <span class="pu">()</span> <span class="pu">=&gt;</span> <span class="nm">SendAsync</span><span class="pu">(),</span> <span class="nm">myCustomParser</span><span class="pu">,</span> <span class="st">"SendWelcomeEmail"</span><span class="pu">);</span></code></pre>
+
+    <h3>Analyzer behaviour with a custom parser</h3>
+    <p>The Roslyn analyzer checks <code>[Toggle]</code>-decorated methods against <code>appsettings.json</code> at build time. <strong>If your custom parser does not use <code>appsettings.json</code></strong>, do not register it as an <code>AdditionalFiles</code> entry — doing so will produce false <code>FTRIO001</code> errors for keys that exist in your custom source but not in the file.</p>
+
+    <table>
+      <thead>
+        <tr><th>Scenario</th><th>What to do</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Using the default <code>ToggleParser</code> with <code>appsettings.json</code></td>
+          <td>Add the <code>AdditionalFiles</code> entry to enable the analyzer</td>
+        </tr>
+        <tr>
+          <td>Using a custom <code>IToggleParser</code></td>
+          <td>Omit the <code>AdditionalFiles</code> entry — analyzer stays silent</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>To silence <code>FTRIO001</code> entirely regardless of parser:</p>
+    <pre><code><span class="xml-tag">&lt;PropertyGroup&gt;</span>
+  <span class="xml-tag">&lt;NoWarn&gt;</span>FTRIO001<span class="xml-tag">&lt;/NoWarn&gt;</span>
+<span class="xml-tag">&lt;/PropertyGroup&gt;</span></code></pre>
+  </section>
+
+  <p class="path-divider">Dynamic providers — runtime toggle state</p>
+
+  <!-- STRATEGIES -->
+  <section id="strategies">
+    <h2><span class="icon">🎲</span> Strategy-based decisions</h2>
+    <p><code>StrategyToggleParser</code> is a drop-in replacement for <code>ToggleParser</code> that routes raw config values through a chain of <code>IToggleDecisionStrategy</code> implementations. <code>BooleanStrategy</code> is always appended as the final fallback so existing <code>true</code>/<code>false</code> values continue to work with no changes.</p>
+
+    <h3>Percentage rollout</h3>
+    <p>Any value ending in <code>%</code> is handled by <code>PercentageRolloutStrategy</code>. The check is probabilistic per-call — a 20% rollout means roughly 1 in 5 calls execute the method body:</p>
+    <pre><code><span class="cm">// appsettings.json</span>
+<span class="pu">{</span> <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"NewCheckout"</span><span class="pu">:</span> <span class="st">"20%"</span> <span class="pu">}</span> <span class="pu">}</span>
+
+<span class="cm">// startup</span>
+<span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">StrategyToggleParser</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">PercentageRolloutStrategy</span><span class="pu">()));</span>
+
+<span class="at">[Toggle]</span>
+<span class="kw">public void</span> <span class="nm">NewCheckout</span><span class="pu">()</span> <span class="pu">{</span> <span class="pu">...</span> <span class="pu">}</span>  <span class="cm">// runs ~20% of the time</span></code></pre>
+
+    <h3>Blue-green deployment</h3>
+    <p><code>BlueGreenStrategy</code> routes by named deployment slot. The current slot is declared at startup; the config value is the slot that should be active:</p>
+    <pre><code><span class="cm">// appsettings.json</span>
+<span class="pu">{</span> <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"PaymentV2"</span><span class="pu">:</span> <span class="st">"blue"</span> <span class="pu">}</span> <span class="pu">}</span>
+
+<span class="cm">// startup — currentSlot, knownSlots...</span>
+<span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">StrategyToggleParser</span><span class="pu">(</span>
+    <span class="kw">new</span> <span class="ty">BlueGreenStrategy</span><span class="pu">(</span><span class="st">"blue"</span><span class="pu">,</span> <span class="st">"blue"</span><span class="pu">,</span> <span class="st">"green"</span><span class="pu">)));</span>
+
+<span class="at">[Toggle]</span>
+<span class="kw">public void</span> <span class="nm">PaymentV2</span><span class="pu">()</span> <span class="pu">{</span> <span class="pu">...</span> <span class="pu">}</span>  <span class="cm">// runs only on the "blue" slot</span></code></pre>
+
+    <h3>Combining strategies</h3>
+    <p>Strategies are tried in registration order — the first whose <code>CanHandle</code> returns <code>true</code> wins. <code>BooleanStrategy</code> is always appended automatically as the final fallback.</p>
+    <pre><code><span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">StrategyToggleParser</span><span class="pu">(</span>
+    <span class="kw">new</span> <span class="ty">PercentageRolloutStrategy</span><span class="pu">(),</span>
+    <span class="kw">new</span> <span class="ty">BlueGreenStrategy</span><span class="pu">(</span><span class="st">"blue"</span><span class="pu">,</span> <span class="st">"blue"</span><span class="pu">,</span> <span class="st">"green"</span><span class="pu">)</span>
+    <span class="cm">// BooleanStrategy auto-appended — handles true/false/1/0</span>
+<span class="pu">));</span></code></pre>
+
+    <h3>Custom strategies</h3>
+    <p>Implement <code>IToggleDecisionStrategy</code> to add any decision logic your application needs:</p>
+    <pre><code><span class="kw">public class</span> <span class="ty">TimeWindowStrategy</span> <span class="pu">:</span> <span class="ty">IToggleDecisionStrategy</span>
+<span class="pu">{</span>
+    <span class="kw">public bool</span> <span class="nm">CanHandle</span><span class="pu">(</span><span class="kw">string</span> <span class="nm">rawValue</span><span class="pu">)</span> <span class="pu">=&gt;</span> <span class="nm">rawValue</span><span class="pu">.</span><span class="nm">Contains</span><span class="pu">(</span><span class="st">".."</span><span class="pu">);</span> <span class="cm">// e.g. "09:00..17:00"</span>
+    <span class="kw">public bool</span> <span class="nm">ShouldExecute</span><span class="pu">(</span><span class="kw">string</span> <span class="nm">key</span><span class="pu">,</span> <span class="kw">string</span> <span class="nm">rawValue</span><span class="pu">)</span>
+    <span class="pu">{</span>
+        <span class="cm">// parse the window and check the current time</span>
+    <span class="pu">}</span>
+<span class="pu">}</span></code></pre>
+  </section>
+
+  <!-- PROVIDERS -->
+  <section id="providers">
+    <h2><span class="icon">🌐</span> Dynamic providers</h2>
+
+    <div class="note">
+      <strong>appsettings.json is always the source of truth.</strong> Providers push toggle values into a buffer; the buffer flushes to <code>appsettings.json</code> on a configurable interval; <code>ToggleParser</code> reads from <code>appsettings.json</code> as normal. If a provider goes offline, the last flushed state in the file persists automatically — no fallback logic is needed at call sites.
+    </div>
+
+    <svg viewBox="0 0 870 215" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:870px;display:block;margin:1.5rem auto;">
+      <defs>
+        <marker id="arrGray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0,8 3,0 6" fill="#8b949e"/>
+        </marker>
+        <marker id="arrPink" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0,8 3,0 6" fill="#ff69b4"/>
+        </marker>
+      </defs>
+
+      <!-- PROVIDERS label -->
+      <text x="85" y="13" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace" letter-spacing="1">PROVIDERS</text>
+
+      <!-- HTTP box -->
+      <rect x="10" y="20" width="150" height="34" rx="5" fill="#1f2937" stroke="#30363d"/>
+      <text x="85" y="41" text-anchor="middle" font-size="11" fill="#e6edf3" font-family="SF Mono,Consolas,monospace">HttpToggleParser</text>
+
+      <!-- Azure box -->
+      <rect x="10" y="84" width="150" height="44" rx="5" fill="#1f2937" stroke="#30363d"/>
+      <text x="85" y="103" text-anchor="middle" font-size="11" fill="#e6edf3" font-family="SF Mono,Consolas,monospace">AzureAppConfig</text>
+      <text x="85" y="119" text-anchor="middle" font-size="11" fill="#e6edf3" font-family="SF Mono,Consolas,monospace">ToggleParser</text>
+
+      <!-- Env box -->
+      <rect x="10" y="152" width="150" height="44" rx="5" fill="#1f2937" stroke="#30363d"/>
+      <text x="85" y="171" text-anchor="middle" font-size="11" fill="#e6edf3" font-family="SF Mono,Consolas,monospace">EnvironmentVariable</text>
+      <text x="85" y="187" text-anchor="middle" font-size="11" fill="#e6edf3" font-family="SF Mono,Consolas,monospace">ToggleParser</text>
+
+      <!-- Arrows: providers → buffer -->
+      <path d="M160,37 Q190,37 190,106 L208,106" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrGray)"/>
+      <line x1="160" y1="106" x2="208" y2="106" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrGray)"/>
+      <path d="M160,174 Q190,174 190,106 L208,106" fill="none" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrGray)"/>
+      <text x="178" y="92" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">Stage()</text>
+
+      <!-- Buffer box -->
+      <rect x="210" y="84" width="148" height="44" rx="5" fill="#1f2937" stroke="#30363d"/>
+      <text x="284" y="103" text-anchor="middle" font-size="11" fill="#e6edf3" font-family="SF Mono,Consolas,monospace">ToggleProvider</text>
+      <text x="284" y="119" text-anchor="middle" font-size="11" fill="#e6edf3" font-family="SF Mono,Consolas,monospace">Buffer</text>
+
+      <!-- Buffer → appsettings.json -->
+      <line x1="358" y1="106" x2="392" y2="106" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrGray)"/>
+      <text x="375" y="98" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">flush</text>
+      <text x="375" y="118" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">every N s</text>
+
+      <!-- appsettings.json box (pink highlight) -->
+      <rect x="394" y="80" width="158" height="52" rx="5" fill="#2d1f3d" stroke="#ff69b4" stroke-width="1.5"/>
+      <text x="473" y="101" text-anchor="middle" font-size="11" fill="#ff69b4" font-family="SF Mono,Consolas,monospace" font-weight="bold">appsettings.json</text>
+      <text x="473" y="119" text-anchor="middle" font-size="9" fill="#9b59b6" font-family="SF Mono,Consolas,monospace">— source of truth —</text>
+
+      <!-- appsettings.json → ToggleParser (dashed pink) -->
+      <line x1="552" y1="106" x2="588" y2="106" stroke="#ff69b4" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrPink)"/>
+      <text x="570" y="98" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">Reload</text>
+      <text x="570" y="118" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">OnChange</text>
+
+      <!-- ToggleParser box -->
+      <rect x="590" y="88" width="130" height="36" rx="5" fill="#1f2937" stroke="#30363d"/>
+      <text x="655" y="111" text-anchor="middle" font-size="11" fill="#e6edf3" font-family="SF Mono,Consolas,monospace">ToggleParser</text>
+
+      <!-- ToggleParser → [Toggle] -->
+      <line x1="720" y1="106" x2="752" y2="106" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrGray)"/>
+
+      <!-- [Toggle] box -->
+      <rect x="754" y="80" width="106" height="52" rx="5" fill="#1f2937" stroke="#50fa7b" stroke-width="1"/>
+      <text x="807" y="101" text-anchor="middle" font-size="12" fill="#50fa7b" font-family="SF Mono,Consolas,monospace">[Toggle]</text>
+      <text x="807" y="119" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">call site</text>
+
+      <!-- Labels -->
+      <text x="727" y="152" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace" letter-spacing="1">READ PATH</text>
+      <text x="473" y="148" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace" font-style="italic">provider offline → last state persists</text>
+    </svg>
+
+    <h3><code>ToggleProviderBuffer</code> — the one required piece</h3>
+    <p>Everything in the provider pipeline flows through one object. Create it once at startup and pass it to every provider you use:</p>
+    <pre><code><span class="kw">var</span> <span class="nm">buffer</span> <span class="pu">=</span> <span class="kw">new</span> <span class="ty">ToggleProviderBuffer</span><span class="pu">();</span></code></pre>
+    <div class="note">
+      <strong>This single line is what enables real-time toggle updates.</strong> The buffer is the bridge between every provider (which writes) and <code>appsettings.json</code> (which <code>ToggleParser</code> reads). Without it, toggle state is fixed at whatever was in the file at startup. With it, any provider can push updates that your running app sees on the next flush — no restart, no redeploy.
+    </div>
+    <p>The buffer reads <code>FlushInterval</code> from <code>appsettings.json</code> automatically, serialises all file writes so providers never race each other, and performs atomic replacement (tmp file → replace) so a crash mid-write can never corrupt the file. Call <code>buffer.Dispose()</code> at shutdown to flush any remaining staged changes before the process exits.</p>
+    <p><strong>Write storms:</strong> staging uses a <code>ConcurrentDictionary</code> — rapid successive updates to the same key collapse to the last value before flush. If a write is in progress when the timer fires, that tick is skipped; staged values accumulate for the next tick and are never dropped.</p>
+
+    <h3>Configuration</h3>
+    <pre><code><span class="pu">{</span>
+  <span class="st">"FtrIO"</span><span class="pu">:</span> <span class="pu">{</span>
+    <span class="st">"ReloadOnChange"</span><span class="pu">:</span> <span class="kw">true</span><span class="pu">,</span>   <span class="cm">// mandatory when using providers</span>
+    <span class="st">"FlushInterval"</span><span class="pu">:</span> <span class="nm">5</span>         <span class="cm">// seconds between buffer flushes, default 5</span>
+  <span class="pu">},</span>
+  <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span>
+    <span class="st">"SendWelcomeEmail"</span><span class="pu">:</span> <span class="kw">true</span>
+  <span class="pu">}</span>
+<span class="pu">}</span></code></pre>
+
+    <table>
+      <thead><tr><th>Key</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>ReloadOnChange</code></td>
+          <td><code>false</code></td>
+          <td><strong>Mandatory when using providers.</strong> Without it, <code>ToggleParser</code> reads the file once at startup and will never see buffer flushes.</td>
+        </tr>
+        <tr>
+          <td><code>FlushInterval</code></td>
+          <td><code>5</code></td>
+          <td>Seconds between buffer flushes to <code>appsettings.json</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>HTTP provider</h3>
+    <pre><code>dotnet add package FtrIO.Providers.Http</code></pre>
+    <p>The endpoint must return a <code>Toggles</code> object at the root — the same shape as <code>appsettings.json</code>:</p>
+    <pre><code><span class="pu">{</span> <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"SendWelcomeEmail"</span><span class="pu">:</span> <span class="st">"true"</span><span class="pu">,</span> <span class="st">"NewCheckout"</span><span class="pu">:</span> <span class="st">"50%"</span> <span class="pu">}</span> <span class="pu">}</span></code></pre>
+    <pre><code><span class="kw">var</span> <span class="nm">buffer</span> <span class="pu">=</span> <span class="kw">new</span> <span class="ty">ToggleProviderBuffer</span><span class="pu">();</span>
+<span class="kw">new</span> <span class="ty">HttpToggleParser</span><span class="pu">(</span><span class="st">"https://flags.example.com/toggles"</span><span class="pu">,</span> <span class="nm">buffer</span><span class="pu">,</span>
+    <span class="nm">pollInterval</span><span class="pu">:</span> <span class="ty">TimeSpan</span><span class="pu">.</span><span class="nm">FromSeconds</span><span class="pu">(</span><span class="nm">30</span><span class="pu">));</span>
+
+<span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">StrategyToggleParser</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">PercentageRolloutStrategy</span><span class="pu">()));</span></code></pre>
+
+    <h3>Azure App Config provider</h3>
+    <pre><code>dotnet add package FtrIO.Providers.AzureAppConfig</code></pre>
+    <p>Keys in App Config should be prefixed with <code>FtrIO:Toggles:</code> so <code>FtrIO:Toggles:SendWelcomeEmail</code> maps to toggle key <code>SendWelcomeEmail</code>.</p>
+    <pre><code><span class="kw">var</span> <span class="nm">buffer</span> <span class="pu">=</span> <span class="kw">new</span> <span class="ty">ToggleProviderBuffer</span><span class="pu">();</span>
+
+<span class="cm">// Connection string</span>
+<span class="kw">new</span> <span class="ty">AzureAppConfigToggleParser</span><span class="pu">(</span><span class="st">"Endpoint=https://...;Id=...;Secret=..."</span><span class="pu">,</span> <span class="nm">buffer</span><span class="pu">);</span>
+
+<span class="cm">// Managed Identity / DefaultAzureCredential</span>
+<span class="kw">new</span> <span class="ty">AzureAppConfigToggleParser</span><span class="pu">(</span>
+    <span class="kw">new</span> <span class="ty">Uri</span><span class="pu">(</span><span class="st">"https://myconfig.azconfig.io"</span><span class="pu">),</span> <span class="kw">new</span> <span class="ty">DefaultAzureCredential</span><span class="pu">(),</span> <span class="nm">buffer</span><span class="pu">);</span>
+
+<span class="cm">// With label filter (e.g. separate staging vs. production values)</span>
+<span class="kw">new</span> <span class="ty">AzureAppConfigToggleParser</span><span class="pu">(</span><span class="nm">connectionString</span><span class="pu">,</span> <span class="nm">buffer</span><span class="pu">,</span> <span class="nm">label</span><span class="pu">:</span> <span class="st">"production"</span><span class="pu">);</span></code></pre>
+
+    <h3>Environment variable provider</h3>
+    <p>Set env vars with the default <code>FTRIO__Toggles__</code> prefix (double-underscore follows .NET config hierarchy conventions):</p>
+    <pre><code>FTRIO__Toggles__SendWelcomeEmail=true
+FTRIO__Toggles__NewCheckout=50%</code></pre>
+    <pre><code><span class="kw">var</span> <span class="nm">buffer</span> <span class="pu">=</span> <span class="kw">new</span> <span class="ty">ToggleProviderBuffer</span><span class="pu">();</span>
+<span class="kw">new</span> <span class="ty">EnvironmentVariableToggleParser</span><span class="pu">(</span><span class="nm">buffer</span><span class="pu">);</span>  <span class="cm">// snapshot at startup</span>
+
+<span class="cm">// Or re-snapshot periodically (e.g. Docker secrets volumes)</span>
+<span class="kw">new</span> <span class="ty">EnvironmentVariableToggleParser</span><span class="pu">(</span><span class="nm">buffer</span><span class="pu">,</span> <span class="nm">pollInterval</span><span class="pu">:</span> <span class="ty">TimeSpan</span><span class="pu">.</span><span class="nm">FromMinutes</span><span class="pu">(</span><span class="nm">5</span><span class="pu">));</span></code></pre>
+
+    <h3>Full wiring example</h3>
+    <pre><code><span class="cm">// 1. Create the buffer — reads FlushInterval from appsettings.json</span>
+<span class="kw">var</span> <span class="nm">buffer</span> <span class="pu">=</span> <span class="kw">new</span> <span class="ty">ToggleProviderBuffer</span><span class="pu">();</span>
+
+<span class="cm">// 2. Start providers — push updates to the buffer in the background</span>
+<span class="kw">new</span> <span class="ty">HttpToggleParser</span><span class="pu">(</span><span class="st">"https://flags.example.com/toggles"</span><span class="pu">,</span> <span class="nm">buffer</span><span class="pu">);</span>
+<span class="kw">new</span> <span class="ty">EnvironmentVariableToggleParser</span><span class="pu">(</span><span class="nm">buffer</span><span class="pu">);</span>
+
+<span class="cm">// 3. Configure the reader — always reads from appsettings.json</span>
+<span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">StrategyToggleParser</span><span class="pu">(</span>
+    <span class="kw">new</span> <span class="ty">PercentageRolloutStrategy</span><span class="pu">(),</span>
+    <span class="kw">new</span> <span class="ty">BlueGreenStrategy</span><span class="pu">(</span><span class="st">"blue"</span><span class="pu">,</span> <span class="st">"blue"</span><span class="pu">,</span> <span class="st">"green"</span><span class="pu">)</span>
+<span class="pu">));</span>
+
+<span class="cm">// 4. Call sites are completely unchanged</span>
+<span class="nm">emailService</span><span class="pu">.</span><span class="nm">SendWelcomeEmail</span><span class="pu">();</span>
+
+<span class="cm">// 5. Flush remaining staged changes on shutdown</span>
+<span class="nm">buffer</span><span class="pu">.</span><span class="nm">Dispose</span><span class="pu">();</span></code></pre>
+
+    <h3>Multiple providers</h3>
+    <p>Multiple providers writing to the same buffer work independently. Each polls its own source and stages its keys. If two providers update the same key before a flush, the last staged value wins — no coordination required.</p>
+
+    <h3><code>CompositeToggleParser</code></h3>
+    <p>For cases where you want one source to override another at <strong>read time</strong> without the buffer, <code>CompositeToggleParser</code> chains parsers with first-wins fallthrough:</p>
+    <pre><code><span class="cm">// Env var overrides appsettings.json — no buffer, direct read fallthrough</span>
+<span class="ty">ToggleParserProvider</span><span class="pu">.</span><span class="nm">Configure</span><span class="pu">(</span><span class="kw">new</span> <span class="ty">CompositeToggleParser</span><span class="pu">(</span>
+    <span class="kw">new</span> <span class="ty">EnvironmentVariableToggleParser</span><span class="pu">(),</span>  <span class="cm">// standalone mode — reads on demand</span>
+    <span class="kw">new</span> <span class="ty">ToggleParser</span><span class="pu">()</span>
+<span class="pu">));</span></code></pre>
+  </section>
+
+  <p class="path-divider">Reference</p>
+
+  <!-- MANUAL CONTROL -->
+  <section>
+    <h2><span class="icon">🎮</span> Manual control</h2>
+    <p><code>ExecuteMethodIfToggleOn</code> is available when you want explicit control — passing a key name override, gating a lambda, or gating a method you can't decorate:</p>
+    <pre><code><span class="kw">var</span> <span class="nm">toggle</span> <span class="pu">=</span> <span class="kw">new</span> <span class="ty">FeatureToggle</span><span class="pu">&lt;</span><span class="ty">EmailService</span><span class="pu">&gt;(</span><span class="kw">new</span> <span class="ty">EmailService</span><span class="pu">());</span>
+
+<span class="cm">// Key resolved from method name via [Toggle] attribute</span>
+<span class="nm">toggle</span><span class="pu">.</span><span class="nm">ExecuteMethodIfToggleOn</span><span class="pu">(</span><span class="nm">svc</span> <span class="pu">=&gt;</span> <span class="nm">svc</span><span class="pu">.</span><span class="nm">SendWelcomeEmail</span><span class="pu">());</span>
+
+<span class="cm">// Explicit key override</span>
+<span class="nm">toggle</span><span class="pu">.</span><span class="nm">ExecuteMethodIfToggleOn</span><span class="pu">(</span><span class="nm">svc</span> <span class="pu">=&gt;</span> <span class="nm">svc</span><span class="pu">.</span><span class="nm">SendWelcomeEmail</span><span class="pu">(),</span> <span class="st">"MyCustomKey"</span><span class="pu">);</span></code></pre>
+  </section>
+
+  <!-- EXCEPTIONS -->
+  <section id="exceptions">
+    <h2><span class="icon">⚠️</span> Exceptions</h2>
+    <p>All exceptions live in the <code>ToggleExceptions</code> namespace:</p>
+
+    <table>
+      <thead>
+        <tr><th>Exception</th><th>When it's thrown</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ToggleDoesNotExistException</code></td>
+          <td><code>appsettings.json</code> exists but has no entry for the requested key in the <code>Toggles</code> section.</td>
+        </tr>
+        <tr>
+          <td><code>ToggleParsedOutOfRangeException</code></td>
+          <td>A <code>Toggles</code> entry exists but its value isn't parseable as a boolean (<code>true</code> / <code>false</code> / <code>1</code> / <code>0</code>).</td>
+        </tr>
+        <tr>
+          <td><code>ToggleAttributeMissingException</code></td>
+          <td><code>ExecuteMethodIfToggleOn</code> is called without an explicit key and the method has no <code>[Toggle]</code> attribute to fall back on.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <pre><code><span class="kw">using</span> <span class="nm">ToggleExceptions</span><span class="pu">;</span>
+
+<span class="kw">try</span>
+<span class="pu">{</span>
+    <span class="nm">emailService</span><span class="pu">.</span><span class="nm">SendWelcomeEmail</span><span class="pu">();</span>
+<span class="pu">}</span>
+<span class="kw">catch</span> <span class="pu">(</span><span class="ty">ToggleDoesNotExistException</span><span class="pu">)</span>
+<span class="pu">{</span>
+    <span class="cm">// "SendWelcomeEmail" key is missing from appsettings.json</span>
+<span class="pu">}</span>
+<span class="kw">catch</span> <span class="pu">(</span><span class="ty">ToggleParsedOutOfRangeException</span><span class="pu">)</span>
+<span class="pu">{</span>
+    <span class="cm">// The value isn't true/false/1/0</span>
+<span class="pu">}</span></code></pre>
+
+    <div class="note">
+      <strong>Async paths:</strong> all three exceptions propagate synchronously — thrown before any <code>Task</code> is created, not wrapped in a faulted <code>Task</code>. A standard <code>try/catch</code> block catches them identically on sync and async call sites.
+    </div>
+  </section>
+
+  <p class="path-divider">The FtrIO ecosystem</p>
+
+  <!-- ECOSYSTEM -->
+  <section id="ecosystem">
+    <h2><span class="icon">🧩</span> How the three tools work together</h2>
+    <p>FtrIO is three tools with a single shared contract: <code>appsettings.json</code> is always the source of truth. Each tool has a distinct role — write, gate, audit — and they compose without any coupling between them.</p>
+
+    <svg viewBox="0 0 860 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:1.5rem auto;">
+      <defs>
+        <marker id="arrG2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#8b949e"/></marker>
+        <marker id="arrP2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#ff69b4"/></marker>
+        <marker id="arrY2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#f1fa8c"/></marker>
+      </defs>
+
+      <!-- FtrIO.Toaster -->
+      <rect x="10" y="20" width="160" height="54" rx="6" fill="#1f2937" stroke="#ff69b4" stroke-width="1.5"/>
+      <text x="90" y="43" text-anchor="middle" font-size="12" fill="#ff69b4" font-family="SF Mono,Consolas,monospace" font-weight="bold">FtrIO.Toaster</text>
+      <text x="90" y="61" text-anchor="middle" font-size="10" fill="#8b949e" font-family="SF Mono,Consolas,monospace">web UI — manage toggles</text>
+
+      <!-- buffer -->
+      <rect x="210" y="30" width="148" height="34" rx="5" fill="#1f2937" stroke="#30363d"/>
+      <text x="284" y="52" text-anchor="middle" font-size="11" fill="#e6edf3" font-family="SF Mono,Consolas,monospace">ToggleProviderBuffer</text>
+
+      <!-- Toaster → buffer -->
+      <line x1="170" y1="47" x2="208" y2="47" stroke="#ff69b4" stroke-width="1.5" marker-end="url(#arrP2)"/>
+      <text x="189" y="40" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">Stage()</text>
+
+      <!-- buffer → appsettings.json -->
+      <line x1="358" y1="47" x2="392" y2="105" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrG2)"/>
+      <text x="393" y="72" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">flush</text>
+
+      <!-- appsettings.json -->
+      <rect x="394" y="82" width="168" height="52" rx="6" fill="#2d1f3d" stroke="#ff69b4" stroke-width="2"/>
+      <text x="478" y="104" text-anchor="middle" font-size="12" fill="#ff69b4" font-family="SF Mono,Consolas,monospace" font-weight="bold">appsettings.json</text>
+      <text x="478" y="122" text-anchor="middle" font-size="9" fill="#9b59b6" font-family="SF Mono,Consolas,monospace">— source of truth —</text>
+
+      <!-- Your code / [Toggle] -->
+      <rect x="680" y="20" width="160" height="54" rx="6" fill="#1f2937" stroke="#50fa7b" stroke-width="1.5"/>
+      <text x="760" y="43" text-anchor="middle" font-size="12" fill="#50fa7b" font-family="SF Mono,Consolas,monospace" font-weight="bold">Your code</text>
+      <text x="760" y="61" text-anchor="middle" font-size="10" fill="#8b949e" font-family="SF Mono,Consolas,monospace">[Toggle] gates execution</text>
+
+      <!-- appsettings.json → [Toggle] (dashed) -->
+      <line x1="562" y1="105" x2="676" y2="47" stroke="#ff69b4" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrP2)"/>
+      <text x="632" y="72" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">ReloadOnChange</text>
+
+      <!-- ftrio-onetwo -->
+      <rect x="10" y="186" width="160" height="54" rx="6" fill="#1f2937" stroke="#f1fa8c" stroke-width="1.5"/>
+      <text x="90" y="209" text-anchor="middle" font-size="12" fill="#f1fa8c" font-family="SF Mono,Consolas,monospace" font-weight="bold">ftrio-onetwo</text>
+      <text x="90" y="227" text-anchor="middle" font-size="10" fill="#8b949e" font-family="SF Mono,Consolas,monospace">CLI — audit toggle state</text>
+
+      <!-- Source code box -->
+      <rect x="210" y="186" width="148" height="54" rx="5" fill="#1f2937" stroke="#30363d"/>
+      <text x="284" y="209" text-anchor="middle" font-size="11" fill="#e6edf3" font-family="SF Mono,Consolas,monospace">Source tree</text>
+      <text x="284" y="227" text-anchor="middle" font-size="10" fill="#8b949e" font-family="SF Mono,Consolas,monospace">[Toggle] references</text>
+
+      <!-- ftrio-onetwo → source tree -->
+      <line x1="170" y1="213" x2="208" y2="213" stroke="#f1fa8c" stroke-width="1.5" marker-end="url(#arrY2)"/>
+      <text x="189" y="206" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">scans</text>
+
+      <!-- ftrio-onetwo → appsettings.json -->
+      <path d="M90,186 Q90,155 394,130" fill="none" stroke="#f1fa8c" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrY2)"/>
+      <text x="240" y="148" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">reads config</text>
+    </svg>
+
+    <table>
+      <thead><tr><th>Tool</th><th>Role</th><th>Reads</th><th>Writes</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>FtrIO</strong> (core)</td>
+          <td>Gates method execution at runtime via compile-time IL weaving</td>
+          <td><code>appsettings.json</code> (via <code>ToggleParser</code>)</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><strong>FtrIO.Toaster</strong></td>
+          <td>Web UI for managing toggle values live without file editing</td>
+          <td><code>appsettings.json</code> (to show current state)</td>
+          <td><code>appsettings.json</code> (via <code>ToggleProviderBuffer</code>)</td>
+        </tr>
+        <tr>
+          <td><strong>ftrio-onetwo</strong></td>
+          <td>CLI audit: cross-references code toggle usage against config</td>
+          <td>Source tree + <code>appsettings*.json</code></td>
+          <td>Optional <code>--markdown</code> report</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>No coupling between tools.</strong> FtrIO.Toaster and ftrio-onetwo both work against the same <code>appsettings.json</code> contract — you can use either, both, or neither without changing your FtrIO core setup.
+    </div>
+  </section>
+
+  <!-- TOASTER -->
+  <section id="toaster">
+    <h2><span class="icon">🍞</span> FtrIO.Toaster</h2>
+    <p><a href="https://github.com/FtrOnOff/FtrIO.Toaster">FtrIO.Toaster</a> is a lightweight Docker-hosted web UI for managing FtrIO feature toggles. It lets you view, edit, add, and delete toggles without touching <code>appsettings.json</code> directly. Changes are written through <code>ToggleProviderBuffer</code> — the same flush pipeline your app uses — so updates land in <code>appsettings.json</code> on the next flush interval and are picked up live via <code>ReloadOnChange</code>.</p>
+
+    <h3>Capabilities</h3>
+    <ul style="color:var(--muted); padding-left:1.4rem; line-height:2.2; margin-bottom:1rem;">
+      <li>Boolean on/off toggles</li>
+      <li>Percentage rollout controls</li>
+      <li>Blue/green deployment switching</li>
+      <li>Multi-environment support</li>
+      <li>Audit log with timestamps, acting user, old value, and new value</li>
+    </ul>
+
+    <h3>Quick start</h3>
+    <pre><code>git clone https://github.com/FtrOnOff/FtrIO.Toaster
+cd FtrIO.Toaster
+docker compose up -d</code></pre>
+    <p>Then open <code>http://localhost:8000</code>.</p>
+
+    <h3>Configuration</h3>
+    <p>Toaster is configured entirely via environment variables:</p>
+    <table>
+      <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>APPSETTINGS_PATH</code></td><td><code>/data/appsettings.json</code></td><td>Path to the <code>appsettings.json</code> file Toaster manages. Mount this from your app's volume.</td></tr>
+        <tr><td><code>APP_NAME</code></td><td>—</td><td>Display name shown in the UI header.</td></tr>
+        <tr><td><code>AUTH_USERNAME</code></td><td>—</td><td>HTTP Basic Auth username. Set both username and password to enable Basic Auth.</td></tr>
+        <tr><td><code>AUTH_PASSWORD</code></td><td>—</td><td>HTTP Basic Auth password.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Authentication</h3>
+    <p>Toaster supports two authentication modes:</p>
+    <ul style="color:var(--muted); padding-left:1.4rem; line-height:2.2; margin-bottom:1rem;">
+      <li><strong>HTTP Basic Auth</strong> — set <code>AUTH_USERNAME</code> and <code>AUTH_PASSWORD</code>. Suitable for development or internal tooling.</li>
+      <li><strong>OAuth2 Proxy</strong> — place an <a href="https://oauth2-proxy.github.io/oauth2-proxy/">OAuth2 Proxy</a> in front of the container for SSO with Google, Microsoft, GitHub, GitLab, or any OIDC provider. The acting user's identity is then captured in the audit log.</li>
+    </ul>
+
+    <h3>Audit log</h3>
+    <p>Every change is recorded to <code>/log/changes.log</code> as JSONL (one JSON object per line). Each entry captures:</p>
+    <ul style="color:var(--muted); padding-left:1.4rem; line-height:2.2; margin-bottom:1rem;">
+      <li>Timestamp</li>
+      <li>Environment</li>
+      <li>Toggle key</li>
+      <li>Old value → new value</li>
+      <li>Acting user (from Basic Auth or OAuth2 Proxy identity)</li>
+    </ul>
+
+    <h3>How it integrates with FtrIO</h3>
+    <p>Toaster writes toggle values through <code>ToggleProviderBuffer</code> — the same class providers use. This means:</p>
+    <ul style="color:var(--muted); padding-left:1.4rem; line-height:2.2; margin-bottom:1rem;">
+      <li>Writes are atomic (tmp file → replace) — a crash mid-write never corrupts <code>appsettings.json</code></li>
+      <li>Your running app picks up changes via <code>ReloadOnChange</code> with no restart</li>
+      <li>The base <code>appsettings.json</code> remains the fallback if Toaster is offline — last known state persists</li>
+    </ul>
+    <p>Point <code>APPSETTINGS_PATH</code> at the same file your app reads — typically via a shared Docker volume — and Toaster and your app stay automatically in sync.</p>
+  </section>
+
+  <!-- FTRIO-ONETWO -->
+  <section id="onetwo">
+    <h2><span class="icon">1️⃣2️⃣</span> ftrio-onetwo</h2>
+    <p><a href="https://github.com/FtrOnOff/FtrIO.onetwo">ftrio-onetwo</a> is a .NET CLI audit tool. It walks your project's source tree, finds every FtrIO toggle reference, cross-references each against <code>appsettings.json</code>, and outputs a table showing the current state — file and line number included. Because FtrIO always resolves toggle state from <code>appsettings.json</code> at runtime, the tool gives you an instant at-a-glance view of exactly what is enabled or disabled right now without opening a single source file manually.</p>
+
+    <h3>Installation</h3>
+    <pre><code>dotnet pack ./FtrIO.OneTwo
+dotnet tool install -g FtrIO.OneTwo --add-source ./FtrIO.OneTwo/nupkg</code></pre>
+
+    <h3>Usage</h3>
+    <pre><code>ftrio-onetwo [--source &lt;path&gt;] [--config &lt;path&gt;] [--env &lt;name&gt;] [--markdown &lt;output.md&gt;]</code></pre>
+    <table>
+      <thead><tr><th>Argument</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>--source &lt;path&gt;</code></td><td>Directory to scan for toggle usage in <code>.cs</code> files. Defaults to the current directory.</td></tr>
+        <tr><td><code>--config &lt;path&gt;</code></td><td>Directory to search for <code>appsettings*.json</code> files. Defaults to <code>--source</code> when not specified — so source and config can live in entirely different locations.</td></tr>
+        <tr><td><code>--env &lt;name&gt;</code></td><td>Show a single environment using the base+overlay model. Omit to show all <code>appsettings</code> files as separate tables.</td></tr>
+        <tr><td><code>--markdown &lt;file&gt;</code></td><td>Also write the results to a markdown file at the given path.</td></tr>
+        <tr><td><code>--help</code> / <code>-h</code></td><td>Show usage.</td></tr>
+      </tbody>
+    </table>
+    <div class="note">
+      <strong>Positional shorthand:</strong> <code>--source</code> and <code>--config</code> can also be passed as positional arguments — the first positional value is the source path, the second is the config path. E.g. <code>ftrio-onetwo "C:\Projects\MyApp" "C:\Server\configs"</code>.
+    </div>
+
+    <h3>What it detects</h3>
+    <table>
+      <thead><tr><th>Pattern</th><th>Use case</th></tr></thead>
+      <tbody>
+        <tr><td><code>[Toggle]</code></td><td>Synchronous method gated by its own name</td></tr>
+        <tr><td><code>[ToggleAsync]</code></td><td><code>Task</code>-returning method gated by its own name</td></tr>
+        <tr><td><code>ExecuteMethodIfToggleOn(action, "key")</code></td><td>Manual synchronous gating with an explicit key</td></tr>
+        <tr><td><code>ExecuteMethodIfToggleOnAsync(func, "key")</code></td><td>Manual async gating with an explicit key</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Toggle states</h3>
+    <table>
+      <thead><tr><th>State</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>ON</code></td><td>Toggle is <code>true</code> or <code>1</code> in config</td></tr>
+        <tr><td><code>OFF</code></td><td>Toggle is <code>false</code> or <code>0</code> in config</td></tr>
+        <tr><td><code>20%</code></td><td>Percentage rollout — raw value shown directly</td></tr>
+        <tr><td><code>BLUE</code> / <code>GREEN</code></td><td>Blue-green deployment slot — shown in uppercase</td></tr>
+        <tr><td><code>MISSING</code></td><td>Key used in code but absent from all <code>appsettings*.json</code> files</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Example output</h3>
+    <p>Without <code>--env</code>, each <code>appsettings*.json</code> found is shown as a separate table:</p>
+    <pre><code>Scanning C:\Projects\MyApp...
+
+── appsettings.json
+╭──────────────────┬──────────────────┬──────────┬───────┬───────────────────┬──────╮
+│ Toggle Key       │ Method           │ Source   │ State │ File              │ Line │
+├──────────────────┼──────────────────┼──────────┼───────┼───────────────────┼──────┤
+│ NewCheckoutFlow  │ NewCheckoutFlow  │ [Toggle] │  OFF  │ Services\Order.cs │    9 │
+│ SendWelcomeEmail │ SendWelcomeEmail │ [Toggle] │  ON   │ Services\Email.cs │   22 │
+╰──────────────────┴──────────────────┴──────────┴───────┴───────────────────┴──────╯
+2 toggle(s). 1 ON, 1 OFF, 0 PERCENTAGE, 0 BLUE/GREEN, 0 MISSING.
+
+── Staging  (appsettings.Staging.json)
+╭──────────────────┬──────────────────┬────────────┬─────────┬───────────────────┬──────╮
+│ Toggle Key       │ Method           │ Source     │  State  │ File              │ Line │
+├──────────────────┼──────────────────┼────────────┼─────────┼───────────────────┼──────┤
+│ NewCheckoutFlow  │ NewCheckoutFlow  │ [Toggle]   │   50%   │ Services\Order.cs │    9 │
+│ PaymentV2        │ PaymentV2        │ [Toggle]   │  BLUE   │ Services\Pay.cs   │    6 │
+│ SendWelcomeEmail │ SendWelcomeEmail │ [Toggle]   │   ON    │ Services\Email.cs │   22 │
+│ UnknownFeature   │ UnknownFeature   │ ManualCall │ MISSING │ Controllers\Ho... │   42 │
+╰──────────────────┴──────────────────┴────────────┴─────────┴───────────────────┴──────╯
+4 toggle(s). 1 ON, 0 OFF, 1 PERCENTAGE, 1 BLUE/GREEN, 1 MISSING.</code></pre>
+
+    <p>With <code>--env Staging</code>, a single merged table is shown applying the overlay:</p>
+    <pre><code>ftrio-onetwo --source C:\Projects\MyApp --env Staging</code></pre>
+
+    <h3>Multi-environment support</h3>
+    <p>Without <code>--env</code>, ftrio-onetwo finds every <code>appsettings*.json</code> in the <code>--config</code> directory (defaulting to <code>--source</code>) and renders a separate table for each. The environment name is derived from the filename — <code>appsettings.Staging.json</code> → <code>Staging</code>. Each table header includes the full path so there is no ambiguity.</p>
+    <p>With <code>--env</code>, the tool applies FtrIO's overlay model: the environment-specific file's values win, and the base <code>appsettings.json</code> fills any gaps — the same resolution logic your app uses at runtime.</p>
+    <div class="note">
+      <strong>Note:</strong> ftrio-onetwo deliberately ignores <code>ASPNETCORE_ENVIRONMENT</code>, matching FtrIO's own behaviour. Use <code>--env</code> on the command line to target a specific environment.
+    </div>
+
+    <h3>Separating source and config paths</h3>
+    <p>In real-world deployments the source tree and the live config files often live in different places — e.g. source on a dev machine and <code>appsettings.json</code> on a build output or server share. Use <code>--config</code> to point at the config location independently:</p>
+    <pre><code><span class="cm"># Source and config in the same place (default)</span>
+ftrio-onetwo --source C:\Projects\MyApp
+
+<span class="cm"># Config lives in the build output, not alongside source</span>
+ftrio-onetwo --source C:\Projects\MyApp --config C:\Projects\MyApp\bin\Debug\net10.0
+
+<span class="cm"># Config on a remote share or separate server path</span>
+ftrio-onetwo --source C:\Projects\MyApp --config C:\Server\configs --env Production</code></pre>
+
+    <h3>Generating a markdown report</h3>
+    <pre><code>ftrio-onetwo --source C:\Projects\MyApp --config C:\Server\configs --env Production --markdown toggles.md</code></pre>
+    <p>Writes the same table output to a <code>.md</code> file — useful for including toggle state snapshots in PRs or release notes.</p>
+  </section>
+
+  <!-- OPTIONAL CONFIG -->
+  <section>
+    <h2><span class="icon">📄</span> Optional config</h2>
+    <p><strong>Without providers:</strong> <code>appsettings.json</code> is entirely optional. If the file is absent, every toggle is treated as <strong>on</strong> — nothing is gated off. You can ship without a config file and nothing breaks.</p>
+    <p><strong>With providers:</strong> <code>appsettings.json</code> becomes the persistent store that <code>ToggleProviderBuffer</code> writes to and <code>ToggleParser</code> reads from. If the file doesn't exist when the first flush fires, the buffer creates it automatically — so you still don't need to create it manually, but it will exist after the first provider poll. <code>ReloadOnChange: true</code> is mandatory in this mode so <code>ToggleParser</code> picks up each flush.</p>
+    <p>In both modes: if the file <em>exists</em> but is missing a <code>Toggles</code> key for a specific method, that throws <code>ToggleDoesNotExistException</code> — a present-but-incomplete config is treated as a mistake worth surfacing.</p>
+  </section>
+
+</main>
+
+<footer>
+  <p>
+    Built by <a href="https://github.com/TheScottBot">TheScottBot</a> &nbsp;·&nbsp;
+    <a href="https://github.com/FtrOnOff/FtrIO">GitHub</a> &nbsp;·&nbsp;
+    <a href="https://www.nuget.org/packages/FtrIO">NuGet</a> &nbsp;·&nbsp;
+    <a href="https://github.com/FtrOnOff/FtrIO/blob/main/LICENSE">MIT License</a>
+  </p>
+</footer>
+
+<script>
+  function copyInstall(btn) {
+    navigator.clipboard.writeText('dotnet add package FtrIO').then(() => {
+      btn.textContent = 'copied!';
+      setTimeout(() => { btn.textContent = 'copy'; }, 1800);
+    });
+  }
+</script>
+
+</body>
+</html>
