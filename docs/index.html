@@ -279,6 +279,7 @@
     <a href="#providers">Providers</a>
     <a href="#analyzer">Analyzer</a>
     <a href="#exceptions">Exceptions</a>
+    <a href="#ecosystem">Ecosystem</a>
     <a href="https://github.com/TheScottBot/FtrIO">GitHub</a>
     <a href="https://www.nuget.org/packages/FtrIO">NuGet</a>
   </div>
@@ -879,27 +880,239 @@ FTRIO__Toggles__NewCheckout=50%</code></pre>
     </div>
   </section>
 
-  <!-- COMPANION TOOLING -->
-  <section id="tooling">
-    <h2><span class="icon">🛠️</span> Companion tooling</h2>
-    <h3>ftrio-onetwo</h3>
-    <p><a href="https://github.com/TheScottBot/ftrio-onetwo">ftrio-onetwo</a> is a .NET CLI tool that scans a project directory for FtrIO toggle usage and reports the current state of every toggle. It walks the source tree, finds every <code>[Toggle]</code>, <code>[ToggleAsync]</code>, <code>ExecuteMethodIfToggleOn</code>, and <code>ExecuteMethodIfToggleOnAsync</code> reference, cross-references each against <code>appsettings.json</code>, and outputs a table with the file and line number for each — showing the full toggle state, not just on/off:</p>
+  <p class="path-divider">The FtrIO ecosystem</p>
+
+  <!-- ECOSYSTEM -->
+  <section id="ecosystem">
+    <h2><span class="icon">🧩</span> How the three tools work together</h2>
+    <p>FtrIO is three tools with a single shared contract: <code>appsettings.json</code> is always the source of truth. Each tool has a distinct role — write, gate, audit — and they compose without any coupling between them.</p>
+
+    <svg viewBox="0 0 860 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:1.5rem auto;">
+      <defs>
+        <marker id="arrG2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#8b949e"/></marker>
+        <marker id="arrP2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#ff69b4"/></marker>
+        <marker id="arrY2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#f1fa8c"/></marker>
+      </defs>
+
+      <!-- FtrIO.Toaster -->
+      <rect x="10" y="20" width="160" height="54" rx="6" fill="#1f2937" stroke="#ff69b4" stroke-width="1.5"/>
+      <text x="90" y="43" text-anchor="middle" font-size="12" fill="#ff69b4" font-family="SF Mono,Consolas,monospace" font-weight="bold">FtrIO.Toaster</text>
+      <text x="90" y="61" text-anchor="middle" font-size="10" fill="#8b949e" font-family="SF Mono,Consolas,monospace">web UI — manage toggles</text>
+
+      <!-- buffer -->
+      <rect x="210" y="30" width="148" height="34" rx="5" fill="#1f2937" stroke="#30363d"/>
+      <text x="284" y="52" text-anchor="middle" font-size="11" fill="#e6edf3" font-family="SF Mono,Consolas,monospace">ToggleProviderBuffer</text>
+
+      <!-- Toaster → buffer -->
+      <line x1="170" y1="47" x2="208" y2="47" stroke="#ff69b4" stroke-width="1.5" marker-end="url(#arrP2)"/>
+      <text x="189" y="40" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">Stage()</text>
+
+      <!-- buffer → appsettings.json -->
+      <line x1="358" y1="47" x2="392" y2="105" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrG2)"/>
+      <text x="393" y="72" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">flush</text>
+
+      <!-- appsettings.json -->
+      <rect x="394" y="82" width="168" height="52" rx="6" fill="#2d1f3d" stroke="#ff69b4" stroke-width="2"/>
+      <text x="478" y="104" text-anchor="middle" font-size="12" fill="#ff69b4" font-family="SF Mono,Consolas,monospace" font-weight="bold">appsettings.json</text>
+      <text x="478" y="122" text-anchor="middle" font-size="9" fill="#9b59b6" font-family="SF Mono,Consolas,monospace">— source of truth —</text>
+
+      <!-- Your code / [Toggle] -->
+      <rect x="680" y="20" width="160" height="54" rx="6" fill="#1f2937" stroke="#50fa7b" stroke-width="1.5"/>
+      <text x="760" y="43" text-anchor="middle" font-size="12" fill="#50fa7b" font-family="SF Mono,Consolas,monospace" font-weight="bold">Your code</text>
+      <text x="760" y="61" text-anchor="middle" font-size="10" fill="#8b949e" font-family="SF Mono,Consolas,monospace">[Toggle] gates execution</text>
+
+      <!-- appsettings.json → [Toggle] (dashed) -->
+      <line x1="562" y1="105" x2="676" y2="47" stroke="#ff69b4" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrP2)"/>
+      <text x="632" y="72" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">ReloadOnChange</text>
+
+      <!-- ftrio-onetwo -->
+      <rect x="10" y="186" width="160" height="54" rx="6" fill="#1f2937" stroke="#f1fa8c" stroke-width="1.5"/>
+      <text x="90" y="209" text-anchor="middle" font-size="12" fill="#f1fa8c" font-family="SF Mono,Consolas,monospace" font-weight="bold">ftrio-onetwo</text>
+      <text x="90" y="227" text-anchor="middle" font-size="10" fill="#8b949e" font-family="SF Mono,Consolas,monospace">CLI — audit toggle state</text>
+
+      <!-- Source code box -->
+      <rect x="210" y="186" width="148" height="54" rx="5" fill="#1f2937" stroke="#30363d"/>
+      <text x="284" y="209" text-anchor="middle" font-size="11" fill="#e6edf3" font-family="SF Mono,Consolas,monospace">Source tree</text>
+      <text x="284" y="227" text-anchor="middle" font-size="10" fill="#8b949e" font-family="SF Mono,Consolas,monospace">[Toggle] references</text>
+
+      <!-- ftrio-onetwo → source tree -->
+      <line x1="170" y1="213" x2="208" y2="213" stroke="#f1fa8c" stroke-width="1.5" marker-end="url(#arrY2)"/>
+      <text x="189" y="206" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">scans</text>
+
+      <!-- ftrio-onetwo → appsettings.json -->
+      <path d="M90,186 Q90,155 394,130" fill="none" stroke="#f1fa8c" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrY2)"/>
+      <text x="240" y="148" text-anchor="middle" font-size="9" fill="#6272a4" font-family="SF Mono,Consolas,monospace">reads config</text>
+    </svg>
 
     <table>
-      <thead><tr><th>State</th><th>Meaning</th></tr></thead>
+      <thead><tr><th>Tool</th><th>Role</th><th>Reads</th><th>Writes</th></tr></thead>
       <tbody>
-        <tr><td><code>ON</code></td><td>Toggle is <code>true</code> or <code>1</code> in <code>appsettings.json</code></td></tr>
-        <tr><td><code>OFF</code></td><td>Toggle is <code>false</code> or <code>0</code> in <code>appsettings.json</code></td></tr>
-        <tr><td><code>20%</code></td><td>Percentage rollout — the raw value (e.g. <code>"20%"</code>) is shown directly</td></tr>
-        <tr><td><code>BLUE</code> / <code>GREEN</code></td><td>Blue-green deployment slot — shown in uppercase</td></tr>
-        <tr><td><code>MISSING</code></td><td>Toggle key is used in code but has no entry in any <code>appsettings*.json</code> file</td></tr>
+        <tr>
+          <td><strong>FtrIO</strong> (core)</td>
+          <td>Gates method execution at runtime via compile-time IL weaving</td>
+          <td><code>appsettings.json</code> (via <code>ToggleParser</code>)</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><strong>FtrIO.Toaster</strong></td>
+          <td>Web UI for managing toggle values live without file editing</td>
+          <td><code>appsettings.json</code> (to show current state)</td>
+          <td><code>appsettings.json</code> (via <code>ToggleProviderBuffer</code>)</td>
+        </tr>
+        <tr>
+          <td><strong>ftrio-onetwo</strong></td>
+          <td>CLI audit: cross-references code toggle usage against config</td>
+          <td>Source tree + <code>appsettings*.json</code></td>
+          <td>Optional <code>--markdown</code> report</td>
+        </tr>
       </tbody>
     </table>
 
-    <pre><code>ftrio-onetwo C:\Projects\MyApp --markdown toggles.md</code></pre>
+    <div class="note">
+      <strong>No coupling between tools.</strong> FtrIO.Toaster and ftrio-onetwo both work against the same <code>appsettings.json</code> contract — you can use either, both, or neither without changing your FtrIO core setup.
+    </div>
+  </section>
 
-    <h3>FtrIO.Toaster</h3>
-    <p><a href="https://github.com/TheScottBot/FtrIO.Toaster">FtrIO.Toaster</a> is a lightweight web app for managing toggles directly without editing <code>appsettings.json</code> by hand. It writes toggle values through <code>ToggleProviderBuffer</code> using the same buffer logic your app already uses — changes flush to <code>appsettings.json</code> on the configured interval and are picked up live via <code>ReloadOnChange</code>.</p>
+  <!-- TOASTER -->
+  <section id="toaster">
+    <h2><span class="icon">🍞</span> FtrIO.Toaster</h2>
+    <p><a href="https://github.com/TheScottBot/FtrIO.Toaster">FtrIO.Toaster</a> is a lightweight Docker-hosted web UI for managing FtrIO feature toggles. It lets you view, edit, add, and delete toggles without touching <code>appsettings.json</code> directly. Changes are written through <code>ToggleProviderBuffer</code> — the same flush pipeline your app uses — so updates land in <code>appsettings.json</code> on the next flush interval and are picked up live via <code>ReloadOnChange</code>.</p>
+
+    <h3>Capabilities</h3>
+    <ul style="color:var(--muted); padding-left:1.4rem; line-height:2.2; margin-bottom:1rem;">
+      <li>Boolean on/off toggles</li>
+      <li>Percentage rollout controls</li>
+      <li>Blue/green deployment switching</li>
+      <li>Multi-environment support</li>
+      <li>Audit log with timestamps, acting user, old value, and new value</li>
+    </ul>
+
+    <h3>Quick start</h3>
+    <pre><code>git clone https://github.com/TheScottBot/FtrIO.Toaster
+cd FtrIO.Toaster
+docker compose up -d</code></pre>
+    <p>Then open <code>http://localhost:8000</code>.</p>
+
+    <h3>Configuration</h3>
+    <p>Toaster is configured entirely via environment variables:</p>
+    <table>
+      <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>APPSETTINGS_PATH</code></td><td><code>/data/appsettings.json</code></td><td>Path to the <code>appsettings.json</code> file Toaster manages. Mount this from your app's volume.</td></tr>
+        <tr><td><code>APP_NAME</code></td><td>—</td><td>Display name shown in the UI header.</td></tr>
+        <tr><td><code>AUTH_USERNAME</code></td><td>—</td><td>HTTP Basic Auth username. Set both username and password to enable Basic Auth.</td></tr>
+        <tr><td><code>AUTH_PASSWORD</code></td><td>—</td><td>HTTP Basic Auth password.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Authentication</h3>
+    <p>Toaster supports two authentication modes:</p>
+    <ul style="color:var(--muted); padding-left:1.4rem; line-height:2.2; margin-bottom:1rem;">
+      <li><strong>HTTP Basic Auth</strong> — set <code>AUTH_USERNAME</code> and <code>AUTH_PASSWORD</code>. Suitable for development or internal tooling.</li>
+      <li><strong>OAuth2 Proxy</strong> — place an <a href="https://oauth2-proxy.github.io/oauth2-proxy/">OAuth2 Proxy</a> in front of the container for SSO with Google, Microsoft, GitHub, GitLab, or any OIDC provider. The acting user's identity is then captured in the audit log.</li>
+    </ul>
+
+    <h3>Audit log</h3>
+    <p>Every change is recorded to <code>/log/changes.log</code> as JSONL (one JSON object per line). Each entry captures:</p>
+    <ul style="color:var(--muted); padding-left:1.4rem; line-height:2.2; margin-bottom:1rem;">
+      <li>Timestamp</li>
+      <li>Environment</li>
+      <li>Toggle key</li>
+      <li>Old value → new value</li>
+      <li>Acting user (from Basic Auth or OAuth2 Proxy identity)</li>
+    </ul>
+
+    <h3>How it integrates with FtrIO</h3>
+    <p>Toaster writes toggle values through <code>ToggleProviderBuffer</code> — the same class providers use. This means:</p>
+    <ul style="color:var(--muted); padding-left:1.4rem; line-height:2.2; margin-bottom:1rem;">
+      <li>Writes are atomic (tmp file → replace) — a crash mid-write never corrupts <code>appsettings.json</code></li>
+      <li>Your running app picks up changes via <code>ReloadOnChange</code> with no restart</li>
+      <li>The base <code>appsettings.json</code> remains the fallback if Toaster is offline — last known state persists</li>
+    </ul>
+    <p>Point <code>APPSETTINGS_PATH</code> at the same file your app reads — typically via a shared Docker volume — and Toaster and your app stay automatically in sync.</p>
+  </section>
+
+  <!-- FTRIO-ONETWO -->
+  <section id="onetwo">
+    <h2><span class="icon">1️⃣2️⃣</span> ftrio-onetwo</h2>
+    <p><a href="https://github.com/TheScottBot/ftrio-onetwo">ftrio-onetwo</a> is a .NET CLI audit tool. It walks your project's source tree, finds every FtrIO toggle reference, cross-references each against <code>appsettings.json</code>, and outputs a table showing the current state — file and line number included. Because FtrIO always resolves toggle state from <code>appsettings.json</code> at runtime, the tool gives you an instant at-a-glance view of exactly what is enabled or disabled right now without opening a single source file manually.</p>
+
+    <h3>Installation</h3>
+    <pre><code>dotnet pack ./FtrIO.OneTwo
+dotnet tool install -g FtrIO.OneTwo --add-source ./FtrIO.OneTwo/nupkg</code></pre>
+
+    <h3>Usage</h3>
+    <pre><code>ftrio-onetwo [path] [--env &lt;name&gt;] [--markdown &lt;output.md&gt;]</code></pre>
+    <table>
+      <thead><tr><th>Argument</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>path</code></td><td>Path to the project or solution directory. Defaults to the current directory.</td></tr>
+        <tr><td><code>--env &lt;name&gt;</code></td><td>Target a specific environment. Reads <code>appsettings.&lt;name&gt;.json</code> as an overlay on top of the base config.</td></tr>
+        <tr><td><code>--markdown &lt;file&gt;</code></td><td>Also write the results to a markdown file at the given path.</td></tr>
+        <tr><td><code>--help</code> / <code>-h</code></td><td>Show usage.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>What it detects</h3>
+    <table>
+      <thead><tr><th>Pattern</th><th>Use case</th></tr></thead>
+      <tbody>
+        <tr><td><code>[Toggle]</code></td><td>Synchronous method gated by its own name</td></tr>
+        <tr><td><code>[ToggleAsync]</code></td><td><code>Task</code>-returning method gated by its own name</td></tr>
+        <tr><td><code>ExecuteMethodIfToggleOn(action, "key")</code></td><td>Manual synchronous gating with an explicit key</td></tr>
+        <tr><td><code>ExecuteMethodIfToggleOnAsync(func, "key")</code></td><td>Manual async gating with an explicit key</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Toggle states</h3>
+    <table>
+      <thead><tr><th>State</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>ON</code></td><td>Toggle is <code>true</code> or <code>1</code> in config</td></tr>
+        <tr><td><code>OFF</code></td><td>Toggle is <code>false</code> or <code>0</code> in config</td></tr>
+        <tr><td><code>20%</code></td><td>Percentage rollout — raw value shown directly</td></tr>
+        <tr><td><code>BLUE</code> / <code>GREEN</code></td><td>Blue-green deployment slot — shown in uppercase</td></tr>
+        <tr><td><code>MISSING</code></td><td>Key used in code but absent from all <code>appsettings*.json</code> files</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Example output</h3>
+    <p>Without <code>--env</code>, each <code>appsettings*.json</code> found is shown as a separate table:</p>
+    <pre><code>Scanning C:\Projects\MyApp...
+
+── appsettings.json
+╭──────────────────┬──────────────────┬──────────┬───────┬───────────────────┬──────╮
+│ Toggle Key       │ Method           │ Source   │ State │ File              │ Line │
+├──────────────────┼──────────────────┼──────────┼───────┼───────────────────┼──────┤
+│ NewCheckoutFlow  │ NewCheckoutFlow  │ [Toggle] │  OFF  │ Services\Order.cs │    9 │
+│ SendWelcomeEmail │ SendWelcomeEmail │ [Toggle] │  ON   │ Services\Email.cs │   22 │
+╰──────────────────┴──────────────────┴──────────┴───────┴───────────────────┴──────╯
+2 toggle(s). 1 ON, 1 OFF, 0 PERCENTAGE, 0 BLUE/GREEN, 0 MISSING.
+
+── Staging  (appsettings.Staging.json)
+╭──────────────────┬──────────────────┬────────────┬─────────┬───────────────────┬──────╮
+│ Toggle Key       │ Method           │ Source     │  State  │ File              │ Line │
+├──────────────────┼──────────────────┼────────────┼─────────┼───────────────────┼──────┤
+│ NewCheckoutFlow  │ NewCheckoutFlow  │ [Toggle]   │   50%   │ Services\Order.cs │    9 │
+│ PaymentV2        │ PaymentV2        │ [Toggle]   │  BLUE   │ Services\Pay.cs   │    6 │
+│ SendWelcomeEmail │ SendWelcomeEmail │ [Toggle]   │   ON    │ Services\Email.cs │   22 │
+│ UnknownFeature   │ UnknownFeature   │ ManualCall │ MISSING │ Controllers\Ho... │   42 │
+╰──────────────────┴──────────────────┴────────────┴─────────┴───────────────────┴──────╯
+4 toggle(s). 1 ON, 0 OFF, 1 PERCENTAGE, 1 BLUE/GREEN, 1 MISSING.</code></pre>
+
+    <p>With <code>--env Staging</code>, a single merged table is shown applying the overlay:</p>
+    <pre><code>ftrio-onetwo C:\Projects\MyApp --env Staging</code></pre>
+
+    <h3>Multi-environment support</h3>
+    <p>Without <code>--env</code>, ftrio-onetwo finds every <code>appsettings*.json</code> in the project tree and renders a separate table for each. The environment name is derived from the filename — <code>appsettings.Staging.json</code> → <code>Staging</code>. Each table header includes the full path so there is no ambiguity.</p>
+    <p>With <code>--env</code>, the tool applies FtrIO's overlay model: the environment-specific file's values win, and the base <code>appsettings.json</code> fills any gaps — the same resolution logic your app uses at runtime.</p>
+    <div class="note">
+      <strong>Note:</strong> ftrio-onetwo deliberately ignores <code>ASPNETCORE_ENVIRONMENT</code>, matching FtrIO's own behaviour. Use <code>--env</code> on the command line to target a specific environment.
+    </div>
+
+    <h3>Generating a markdown report</h3>
+    <pre><code>ftrio-onetwo C:\Projects\MyApp --env Production --markdown toggles.md</code></pre>
+    <p>Writes the same table output to a <code>.md</code> file — useful for including toggle state snapshots in PRs or release notes.</p>
   </section>
 
   <!-- OPTIONAL CONFIG -->
