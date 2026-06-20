@@ -141,3 +141,4 @@ ToggleParserProvider.Configure(new StrategyToggleParser(
 | Exceptions — `ToggleDoesNotExistException` etc. | [docs/#exceptions](https://TheScottBot.github.io/FtrIO/#exceptions) |
 | Compile-time validation — `FTRIO001` | [docs/#analyzer](https://TheScottBot.github.io/FtrIO/#analyzer) |
 | Companion tooling — ftrio-onetwo | [github.com/TheScottBot/ftrio-onetwo](https://github.com/TheScottBot/ftrio-onetwo) |
+| Companion UI — FtrIO.Toaster | [github.com/TheScottBot/FtrIO.Toaster](https://github.com/TheScottBot/FtrIO.Toaster) — lightweight web app to manage toggles directly via the buffer |

@@ -841,7 +841,11 @@ FTRIO__Toggles__NewCheckout=50%</code></pre>
   <!-- COMPANION TOOLING -->
   <section id="tooling">
     <h2><span class="icon">🛠️</span> Companion tooling</h2>
+    <h3>ftrio-onetwo</h3>
     <p><a href="https://github.com/TheScottBot/ftrio-onetwo">ftrio-onetwo</a> is a command-line utility that supplements this library — see the repository for installation and usage instructions.</p>
+
+    <h3>FtrIO.Toaster</h3>
+    <p><a href="https://github.com/TheScottBot/FtrIO.Toaster">FtrIO.Toaster</a> is a lightweight web app for managing toggles directly without editing <code>appsettings.json</code> by hand. It writes toggle values through <code>ToggleProviderBuffer</code> using the same buffer logic your app already uses — changes flush to <code>appsettings.json</code> on the configured interval and are picked up live via <code>ReloadOnChange</code>.</p>
   </section>
 
   <!-- OPTIONAL CONFIG -->
