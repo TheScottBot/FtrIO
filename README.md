@@ -1,19 +1,14 @@
 ![FtrIO](assets/ftrio-banner.png)
 
 [![NuGet](https://img.shields.io/nuget/v/FtrIO?color=ff69b4&logo=nuget)](https://www.nuget.org/packages/FtrIO)
-[![Docs](https://img.shields.io/badge/docs-ftrio-ff69b4)](https://TheScottBot.github.io/FtrIO/)
+[![CI](https://github.com/TheScottBot/FtrIO/actions/workflows/dotnet.yml/badge.svg)](https://github.com/TheScottBot/FtrIO/actions)
+[![.NET](https://img.shields.io/badge/.NET-6--10-512BD4)](https://dotnet.microsoft.com)
 
 # FtrIO
 
 FtrIO == Feature I/O
 
 Gate method execution from config — no `if` statements, no wrapper classes. Decorate a method with `[Toggle]` and it becomes automatically gated by its own name.
-
-## Installation
-
-```bash
-dotnet add package FtrIO
-```
 
 ## Why FtrIO?
 
@@ -66,7 +61,9 @@ dotnet add package FtrIO
 
 ## Quick start
 
-Add a `Toggles` section to `appsettings.json` and decorate methods — that's it.
+```bash
+dotnet add package FtrIO
+```
 
 ```json
 {
@@ -92,8 +89,6 @@ Any project that decorates its own methods needs an [AspectInjector](https://git
 ```xml
 <PackageReference Include="AspectInjector" Version="2.9.0" />
 ```
-
-> **[Full docs →](https://TheScottBot.github.io/FtrIO/)** — async, hot-reload, exceptions, analyzer, DI, deploying appsettings.json
 
 ---
 
@@ -128,22 +123,17 @@ flowchart LR
     style buffer fill:#1f2937,stroke:#8b949e,color:#e6edf3
 ```
 
-Providers push updates into `ToggleProviderBuffer`; the buffer flushes to `appsettings.json` on a configurable interval; `ToggleParser` reads from the file as normal. If a provider goes offline, the last flushed state persists automatically. `[Toggle]`, `[ToggleAsync]`, and `ExecuteMethodIfToggleOn` call sites are completely unchanged.
-
-```bash
-dotnet add package FtrIO.Providers.Http
-dotnet add package FtrIO.Providers.AzureAppConfig
-```
+Providers push updates into `ToggleProviderBuffer`; the buffer flushes to `appsettings.json` on a configurable interval; `ToggleParser` reads from the file as normal. If a provider goes offline, the last flushed state persists automatically.
 
 > **`ReloadOnChange: true` is mandatory when using providers** — without it `ToggleParser` reads the file once at startup and never sees buffer flushes.
 
-> **[Provider docs →](https://TheScottBot.github.io/FtrIO/#providers)**
+> **[Full provider docs →](https://TheScottBot.github.io/FtrIO/#providers)** — HTTP, Azure App Config, env vars, buffer config, CompositeToggleParser
 
 ---
 
 ## Strategy-based decisions
 
-`StrategyToggleParser` routes raw config values through a chain of `IToggleDecisionStrategy` implementations — percentage rollouts, blue-green slots, or any custom logic — with `BooleanStrategy` always appended as the final fallback.
+`StrategyToggleParser` routes raw config values through a chain of `IToggleDecisionStrategy` implementations — percentage rollouts, blue-green slots, or custom logic:
 
 ```csharp
 ToggleParserProvider.Configure(new StrategyToggleParser(
@@ -156,58 +146,13 @@ ToggleParserProvider.Configure(new StrategyToggleParser(
 { "Toggles": { "NewCheckout": "20%", "PaymentV2": "blue" } }
 ```
 
-> **[Strategy docs →](https://TheScottBot.github.io/FtrIO/#strategies)**
+> **[Full strategy docs →](https://TheScottBot.github.io/FtrIO/#strategies)** — percentage rollout, blue-green, combining strategies, custom `IToggleDecisionStrategy`
 
 ---
 
 ## Multi-environment support
 
-FtrIO supports unlimited environments with no upper limit on how many you run. The right approach depends on your setup:
-
-### Separate servers per environment (the common case)
-
-Each server just needs its own `appsettings.json`. Prod server has prod toggles, staging server has staging toggles — they are completely independent. No FtrIO configuration is required beyond what each server already has:
-
-```
-prod-server/appsettings.json    ← production toggle state
-staging-server/appsettings.json ← staging toggle state
-dev-machine/appsettings.json    ← dev toggle state
-```
-
-This works for any number of environments. Each deployment is self-contained.
-
-### Single machine, multiple environments (local dev)
-
-When you want to share a base config and override specific keys per environment on one machine, set `FtrIO:Environment` in `appsettings.json` to activate an overlay file:
-
-```json
-// appsettings.json
-{
-  "FtrIO": { "ReloadOnChange": true, "Environment": "Staging" },
-  "Toggles": { "SendWelcomeEmail": true, "NewCheckout": false }
-}
-
-// appsettings.Staging.json — only what differs from the base
-{
-  "Toggles": { "NewCheckout": "50%" }
-}
-```
-
-`ToggleParser` layers the env file on top — env-specific values win, the base fills the gaps. `ToggleProviderBuffer` writes to the env file, leaving the base untouched.
-
-> `FtrIO:Environment` must be set explicitly in config. FtrIO deliberately ignores `ASPNETCORE_ENVIRONMENT` for the buffer's write target — a server's own `appsettings.json` is its environment, and writing to a different file because an env var happens to be set would break single-server deployments.
-
-### Remote config sources (Azure, HTTP, env vars)
-
-For toggle state that lives on a remote server, use a provider — it pulls from the remote source and flushes to the local `appsettings.json`. Works across any number of environments with no file management:
-
-```csharp
-// Azure App Config with per-environment labels
-new AzureAppConfigToggleParser(connectionString, buffer, label: "staging");
-
-// HTTP config server
-new HttpToggleParser("https://config.internal/toggles/staging", buffer);
-```
+Each server needs only its own `appsettings.json` — prod, staging, and dev are fully independent with no FtrIO configuration required. For single-machine overlays (`appsettings.{env}.json`) or remote config sources, see the docs.
 
 > **[Multi-environment docs →](https://TheScottBot.github.io/FtrIO/#environments)**
 
@@ -215,13 +160,16 @@ new HttpToggleParser("https://config.internal/toggles/staging", buffer);
 
 ## Reference
 
-| Topic | Link |
+| Topic | Docs |
 |-------|------|
 | Async — `[ToggleAsync]`, `ExecuteMethodIfToggleOnAsync` | [docs/#async](https://TheScottBot.github.io/FtrIO/#async) |
 | Hot-reload — `ReloadOnChange` | [docs/#hotreload](https://TheScottBot.github.io/FtrIO/#hotreload) |
-| Manual control — `ExecuteMethodIfToggleOn` | [docs](https://TheScottBot.github.io/FtrIO/) |
-| Custom parser / Dependency Injection | [docs/#di](https://TheScottBot.github.io/FtrIO/#di) |
-| Exceptions — `ToggleDoesNotExistException` etc. | [docs/#exceptions](https://TheScottBot.github.io/FtrIO/#exceptions) |
+| Multi-environment — overlays, remote sources | [docs/#environments](https://TheScottBot.github.io/FtrIO/#environments) |
+| Dynamic providers — HTTP, Azure, env vars | [docs/#providers](https://TheScottBot.github.io/FtrIO/#providers) |
+| Strategy decisions — percentage, blue-green, custom | [docs/#strategies](https://TheScottBot.github.io/FtrIO/#strategies) |
 | Compile-time validation — `FTRIO001` | [docs/#analyzer](https://TheScottBot.github.io/FtrIO/#analyzer) |
+| Exceptions — `ToggleDoesNotExistException` etc. | [docs/#exceptions](https://TheScottBot.github.io/FtrIO/#exceptions) |
+| Custom parser / Dependency Injection | [docs/#di](https://TheScottBot.github.io/FtrIO/#di) |
+| Manual control — `ExecuteMethodIfToggleOn` | [docs](https://TheScottBot.github.io/FtrIO/) |
 | Companion tooling — ftrio-onetwo | [github.com/TheScottBot/ftrio-onetwo](https://github.com/TheScottBot/ftrio-onetwo) |
-| Companion UI — FtrIO.Toaster | [github.com/TheScottBot/FtrIO.Toaster](https://github.com/TheScottBot/FtrIO.Toaster) — lightweight web app to manage toggles directly via the buffer |
+| Companion UI — FtrIO.Toaster | [github.com/TheScottBot/FtrIO.Toaster](https://github.com/TheScottBot/FtrIO.Toaster) |
