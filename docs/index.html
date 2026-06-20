@@ -510,45 +510,41 @@
   <!-- MULTI-ENVIRONMENT -->
   <section id="environments">
     <h2><span class="icon">🌍</span> Multi-environment support</h2>
-    <p>FtrIO supports separate toggle state per environment — dev, staging, prod — without separate deploys. When an environment is active, <code>ToggleParser</code> layers <code>appsettings.{env}.json</code> on top of the base file. Environment-specific values win; the base file fills the gaps. <code>ToggleProviderBuffer</code> writes provider updates to the env file, leaving the base file untouched.</p>
+    <p>FtrIO supports unlimited environments. The right approach depends on your infrastructure:</p>
 
-    <h3>Setting the active environment</h3>
-    <p>The environment is resolved in this priority order:</p>
-    <ol style="color:var(--muted); padding-left:1.4rem; margin-bottom:1rem; line-height:2;">
-      <li><code>FtrIO:Environment</code> in <code>appsettings.json</code> <em>(highest priority)</em></li>
-      <li><code>ASPNETCORE_ENVIRONMENT</code> environment variable</li>
-      <li><code>DOTNET_ENVIRONMENT</code> environment variable</li>
-    </ol>
+    <h3>Separate servers per environment</h3>
+    <p>This is the common case and requires no special FtrIO configuration. Each server has its own <code>appsettings.json</code> — they are completely independent. Prod server has prod toggles, staging server has staging toggles. There is no upper limit on how many environments or servers you run.</p>
+    <pre><code>prod-server/appsettings.json    <span class="cm">← production toggle state</span>
+staging-server/appsettings.json <span class="cm">← staging toggle state</span>
+dev-machine/appsettings.json    <span class="cm">← dev toggle state</span></code></pre>
+    <p>Each deployment is fully self-contained. <code>[Toggle]</code> call sites read from whichever <code>appsettings.json</code> is local to that server — nothing else to configure.</p>
 
-    <h3>File layout</h3>
-    <pre><code>appsettings.json              <span class="cm">← base / production defaults</span>
-appsettings.Staging.json      <span class="cm">← staging overrides (only what differs)</span>
-appsettings.Development.json  <span class="cm">← dev overrides</span></code></pre>
-
-    <h3>Example config</h3>
+    <h3>Single machine, multiple environments</h3>
+    <p>When you want to share a base config and override specific keys per environment on one machine, set <code>FtrIO:Environment</code> in <code>appsettings.json</code> to activate an overlay file. <code>ToggleParser</code> layers <code>appsettings.{env}.json</code> on top — env-specific values win, the base fills the gaps.</p>
     <pre><code><span class="cm">// appsettings.json</span>
 <span class="pu">{</span>
   <span class="st">"FtrIO"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"ReloadOnChange"</span><span class="pu">:</span> <span class="kw">true</span><span class="pu">,</span> <span class="st">"Environment"</span><span class="pu">:</span> <span class="st">"Staging"</span> <span class="pu">},</span>
   <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"SendWelcomeEmail"</span><span class="pu">:</span> <span class="kw">true</span><span class="pu">,</span> <span class="st">"NewCheckout"</span><span class="pu">:</span> <span class="kw">false</span> <span class="pu">}</span>
 <span class="pu">}</span>
 
-<span class="cm">// appsettings.Staging.json — only override what differs</span>
+<span class="cm">// appsettings.Staging.json — only what differs from the base</span>
 <span class="pu">{</span>
   <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"NewCheckout"</span><span class="pu">:</span> <span class="st">"50%"</span> <span class="pu">}</span>
 <span class="pu">}</span></code></pre>
-
-    <p>Call sites are unchanged — <code>[Toggle]</code>, <code>[ToggleAsync]</code>, and <code>ExecuteMethodIfToggleOn</code> all see the merged view automatically.</p>
-
-    <h3>How <code>ToggleProviderBuffer</code> behaves per environment</h3>
-    <p>When an environment is active, the buffer resolves the same priority chain at startup and writes all provider flushes to <code>appsettings.{env}.json</code>. The base file is never modified by providers in this mode — it stays as the clean production default.</p>
+    <p>When <code>FtrIO:Environment</code> is set, <code>ToggleProviderBuffer</code> also writes provider flushes to the env file — the base file is never modified by providers in this mode.</p>
 
     <div class="note">
-      <strong>Tip:</strong> deploy <code>appsettings.json</code> with production defaults baked in. Set <code>ASPNETCORE_ENVIRONMENT</code> per host to activate the right overlay — no code change, no redeploy needed to switch environments.
+      <strong>Important:</strong> FtrIO deliberately ignores <code>ASPNETCORE_ENVIRONMENT</code> and <code>DOTNET_ENVIRONMENT</code> when deciding where the buffer <em>writes</em>. A server's own <code>appsettings.json</code> is its environment — writing to a different file because an env var happens to be set would break single-server deployments. Only <code>FtrIO:Environment</code> in config triggers env-file writes.
     </div>
 
-    <h3>Azure App Config alternative</h3>
-    <p>If you're already on Azure, the <code>label</code> parameter on <code>AzureAppConfigToggleParser</code> is the zero-file-management equivalent — one App Config store, one label per environment:</p>
-    <pre><code><span class="kw">new</span> <span class="ty">AzureAppConfigToggleParser</span><span class="pu">(</span><span class="nm">connectionString</span><span class="pu">,</span> <span class="nm">buffer</span><span class="pu">,</span> <span class="nm">label</span><span class="pu">:</span> <span class="st">"staging"</span><span class="pu">);</span></code></pre>
+    <h3>Remote config sources</h3>
+    <p>For toggle state that lives on a remote server, use a provider. It pulls from the remote source and flushes to the local <code>appsettings.json</code> — works across any number of environments with no file management:</p>
+    <pre><code><span class="cm">// Azure App Config — one store, one label per environment</span>
+<span class="kw">new</span> <span class="ty">AzureAppConfigToggleParser</span><span class="pu">(</span><span class="nm">connectionString</span><span class="pu">,</span> <span class="nm">buffer</span><span class="pu">,</span> <span class="nm">label</span><span class="pu">:</span> <span class="st">"staging"</span><span class="pu">);</span>
+
+<span class="cm">// HTTP config server</span>
+<span class="kw">new</span> <span class="ty">HttpToggleParser</span><span class="pu">(</span><span class="st">"https://config.internal/toggles/staging"</span><span class="pu">,</span> <span class="nm">buffer</span><span class="pu">);</span></code></pre>
+    <p>If the remote source goes offline, the last flushed state in <code>appsettings.json</code> persists automatically — no fallback code needed.</p>
   </section>
 
   <!-- DI / CUSTOM PARSER -->

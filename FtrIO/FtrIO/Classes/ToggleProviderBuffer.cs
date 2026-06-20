@@ -201,24 +201,27 @@ namespace FtrIO.Classes
             writer.WriteEndObject();
         }
 
+        // The buffer only writes to an env-specific file when FtrIO:Environment is
+        // explicitly set in appsettings.json. Environment variables (ASPNETCORE_ENVIRONMENT
+        // etc.) are intentionally not checked here: on a server where that variable is set
+        // for unrelated reasons (e.g. prod has ASPNETCORE_ENVIRONMENT=Production), the buffer
+        // must still write to appsettings.json — the server's own file is its environment.
         private static string? ResolveEnvironment(string basePath)
         {
             var path = Path.Combine(basePath, "appsettings.json");
-            if (File.Exists(path))
-            {
-                try
-                {
-                    using var doc = JsonDocument.Parse(File.ReadAllText(path));
-                    if (doc.RootElement.TryGetProperty("FtrIO", out var ftrio)
-                        && ftrio.TryGetProperty("Environment", out var env)
-                        && env.GetString() is { Length: > 0 } envValue)
-                        return envValue;
-                }
-                catch { }
-            }
+            if (!File.Exists(path)) return null;
 
-            return System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
-                ?? System.Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+            try
+            {
+                using var doc = JsonDocument.Parse(File.ReadAllText(path));
+                if (doc.RootElement.TryGetProperty("FtrIO", out var ftrio)
+                    && ftrio.TryGetProperty("Environment", out var env)
+                    && env.GetString() is { Length: > 0 } envValue)
+                    return envValue;
+            }
+            catch { }
+
+            return null;
         }
 
         private static TimeSpan ReadFlushIntervalFromConfig(string basePath)

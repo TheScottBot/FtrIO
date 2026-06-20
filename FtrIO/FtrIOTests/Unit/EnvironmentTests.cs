@@ -154,8 +154,11 @@ namespace FtrIOTests.Unit
         }
 
         [Test]
-        public void Buffer_FlushesToEnvFile_WhenAspNetCoreEnvVarSet()
+        public void Buffer_FlushesToBaseFile_EvenWhenAspNetCoreEnvVarSet()
         {
+            // ASPNETCORE_ENVIRONMENT is commonly set on production servers for unrelated
+            // reasons. The buffer must still write to appsettings.json — the server's own
+            // file is its environment. Env vars only affect the read path (ToggleParser).
             File.WriteAllText(_baseSettings, """{"Toggles":{}}""");
             System.Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
 
@@ -165,8 +168,8 @@ namespace FtrIOTests.Unit
             buffer.Stage("MyToggle", "true");
             buffer.FlushNow();
 
-            Assert.IsTrue(File.Exists(prodPath));
-            var toggles = ReadToggles(prodPath);
+            Assert.IsFalse(File.Exists(prodPath), "Buffer must not create an env-specific file based on env vars alone");
+            var toggles = ReadToggles(_baseSettings);
             Assert.AreEqual("true", toggles["MyToggle"].GetString());
         }
 

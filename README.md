@@ -162,19 +162,23 @@ ToggleParserProvider.Configure(new StrategyToggleParser(
 
 ## Multi-environment support
 
-FtrIO supports separate toggle state per environment (dev / staging / prod) without separate deploys. The active environment is resolved in this priority order:
+FtrIO supports unlimited environments with no upper limit on how many you run. The right approach depends on your setup:
 
-1. `FtrIO:Environment` in `appsettings.json`
-2. `ASPNETCORE_ENVIRONMENT` env var
-3. `DOTNET_ENVIRONMENT` env var
+### Separate servers per environment (the common case)
 
-When an environment is active, `ToggleParser` layers `appsettings.{env}.json` on top of the base file — env-specific values win, the base file fills the gaps. `ToggleProviderBuffer` writes provider updates to the env file, leaving the base file untouched.
+Each server just needs its own `appsettings.json`. Prod server has prod toggles, staging server has staging toggles — they are completely independent. No FtrIO configuration is required beyond what each server already has:
 
 ```
-appsettings.json              ← base / production defaults
-appsettings.Staging.json      ← staging overrides (only what differs)
-appsettings.Development.json  ← dev overrides
+prod-server/appsettings.json    ← production toggle state
+staging-server/appsettings.json ← staging toggle state
+dev-machine/appsettings.json    ← dev toggle state
 ```
+
+This works for any number of environments. Each deployment is self-contained.
+
+### Single machine, multiple environments (local dev)
+
+When you want to share a base config and override specific keys per environment on one machine, set `FtrIO:Environment` in `appsettings.json` to activate an overlay file:
 
 ```json
 // appsettings.json
@@ -183,13 +187,27 @@ appsettings.Development.json  ← dev overrides
   "Toggles": { "SendWelcomeEmail": true, "NewCheckout": false }
 }
 
-// appsettings.Staging.json — only override what differs
+// appsettings.Staging.json — only what differs from the base
 {
   "Toggles": { "NewCheckout": "50%" }
 }
 ```
 
-`[Toggle]`, `[ToggleAsync]`, and `ExecuteMethodIfToggleOn` call sites are unchanged — they see the merged view automatically.
+`ToggleParser` layers the env file on top — env-specific values win, the base fills the gaps. `ToggleProviderBuffer` writes to the env file, leaving the base untouched.
+
+> `FtrIO:Environment` must be set explicitly in config. FtrIO deliberately ignores `ASPNETCORE_ENVIRONMENT` for the buffer's write target — a server's own `appsettings.json` is its environment, and writing to a different file because an env var happens to be set would break single-server deployments.
+
+### Remote config sources (Azure, HTTP, env vars)
+
+For toggle state that lives on a remote server, use a provider — it pulls from the remote source and flushes to the local `appsettings.json`. Works across any number of environments with no file management:
+
+```csharp
+// Azure App Config with per-environment labels
+new AzureAppConfigToggleParser(connectionString, buffer, label: "staging");
+
+// HTTP config server
+new HttpToggleParser("https://config.internal/toggles/staging", buffer);
+```
 
 > **[Multi-environment docs →](https://TheScottBot.github.io/FtrIO/#environments)**
 
