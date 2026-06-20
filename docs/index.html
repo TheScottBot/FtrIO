@@ -507,6 +507,50 @@
     <p>When set, <code>ToggleParser</code> attaches a file watcher via <code>Microsoft.Extensions.Configuration</code>. The next call to any <code>[Toggle]</code>-decorated method after the file changes will reflect the updated values — no restart required.</p>
   </section>
 
+  <!-- MULTI-ENVIRONMENT -->
+  <section id="environments">
+    <h2><span class="icon">🌍</span> Multi-environment support</h2>
+    <p>FtrIO supports separate toggle state per environment — dev, staging, prod — without separate deploys. When an environment is active, <code>ToggleParser</code> layers <code>appsettings.{env}.json</code> on top of the base file. Environment-specific values win; the base file fills the gaps. <code>ToggleProviderBuffer</code> writes provider updates to the env file, leaving the base file untouched.</p>
+
+    <h3>Setting the active environment</h3>
+    <p>The environment is resolved in this priority order:</p>
+    <ol style="color:var(--muted); padding-left:1.4rem; margin-bottom:1rem; line-height:2;">
+      <li><code>FtrIO:Environment</code> in <code>appsettings.json</code> <em>(highest priority)</em></li>
+      <li><code>ASPNETCORE_ENVIRONMENT</code> environment variable</li>
+      <li><code>DOTNET_ENVIRONMENT</code> environment variable</li>
+    </ol>
+
+    <h3>File layout</h3>
+    <pre><code>appsettings.json              <span class="cm">← base / production defaults</span>
+appsettings.Staging.json      <span class="cm">← staging overrides (only what differs)</span>
+appsettings.Development.json  <span class="cm">← dev overrides</span></code></pre>
+
+    <h3>Example config</h3>
+    <pre><code><span class="cm">// appsettings.json</span>
+<span class="pu">{</span>
+  <span class="st">"FtrIO"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"ReloadOnChange"</span><span class="pu">:</span> <span class="kw">true</span><span class="pu">,</span> <span class="st">"Environment"</span><span class="pu">:</span> <span class="st">"Staging"</span> <span class="pu">},</span>
+  <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"SendWelcomeEmail"</span><span class="pu">:</span> <span class="kw">true</span><span class="pu">,</span> <span class="st">"NewCheckout"</span><span class="pu">:</span> <span class="kw">false</span> <span class="pu">}</span>
+<span class="pu">}</span>
+
+<span class="cm">// appsettings.Staging.json — only override what differs</span>
+<span class="pu">{</span>
+  <span class="st">"Toggles"</span><span class="pu">:</span> <span class="pu">{</span> <span class="st">"NewCheckout"</span><span class="pu">:</span> <span class="st">"50%"</span> <span class="pu">}</span>
+<span class="pu">}</span></code></pre>
+
+    <p>Call sites are unchanged — <code>[Toggle]</code>, <code>[ToggleAsync]</code>, and <code>ExecuteMethodIfToggleOn</code> all see the merged view automatically.</p>
+
+    <h3>How <code>ToggleProviderBuffer</code> behaves per environment</h3>
+    <p>When an environment is active, the buffer resolves the same priority chain at startup and writes all provider flushes to <code>appsettings.{env}.json</code>. The base file is never modified by providers in this mode — it stays as the clean production default.</p>
+
+    <div class="note">
+      <strong>Tip:</strong> deploy <code>appsettings.json</code> with production defaults baked in. Set <code>ASPNETCORE_ENVIRONMENT</code> per host to activate the right overlay — no code change, no redeploy needed to switch environments.
+    </div>
+
+    <h3>Azure App Config alternative</h3>
+    <p>If you're already on Azure, the <code>label</code> parameter on <code>AzureAppConfigToggleParser</code> is the zero-file-management equivalent — one App Config store, one label per environment:</p>
+    <pre><code><span class="kw">new</span> <span class="ty">AzureAppConfigToggleParser</span><span class="pu">(</span><span class="nm">connectionString</span><span class="pu">,</span> <span class="nm">buffer</span><span class="pu">,</span> <span class="nm">label</span><span class="pu">:</span> <span class="st">"staging"</span><span class="pu">);</span></code></pre>
+  </section>
+
   <!-- DI / CUSTOM PARSER -->
   <section id="di">
     <h2><span class="icon">🔌</span> Custom parser / Dependency Injection</h2>

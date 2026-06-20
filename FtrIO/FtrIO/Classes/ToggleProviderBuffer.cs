@@ -42,7 +42,12 @@ namespace FtrIO.Classes
         public ToggleProviderBuffer(string? basePath = null, TimeSpan? flushInterval = null)
         {
             basePath ??= AppContext.BaseDirectory;
-            _settingsPath = Path.Combine(basePath, "appsettings.json");
+
+            var environment = ResolveEnvironment(basePath);
+            var settingsFileName = environment != null
+                ? $"appsettings.{environment}.json"
+                : "appsettings.json";
+            _settingsPath = Path.Combine(basePath, settingsFileName);
 
             var interval = flushInterval ?? ReadFlushIntervalFromConfig(basePath);
             _timer = new Timer(_ => TimerFlush(), null, interval, interval);
@@ -194,6 +199,26 @@ namespace FtrIO.Classes
                     writer.WriteString(kv.Key, kv.Value);
 
             writer.WriteEndObject();
+        }
+
+        private static string? ResolveEnvironment(string basePath)
+        {
+            var path = Path.Combine(basePath, "appsettings.json");
+            if (File.Exists(path))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(File.ReadAllText(path));
+                    if (doc.RootElement.TryGetProperty("FtrIO", out var ftrio)
+                        && ftrio.TryGetProperty("Environment", out var env)
+                        && env.GetString() is { Length: > 0 } envValue)
+                        return envValue;
+                }
+                catch { }
+            }
+
+            return System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                ?? System.Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
         }
 
         private static TimeSpan ReadFlushIntervalFromConfig(string basePath)

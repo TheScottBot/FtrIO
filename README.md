@@ -160,6 +160,41 @@ ToggleParserProvider.Configure(new StrategyToggleParser(
 
 ---
 
+## Multi-environment support
+
+FtrIO supports separate toggle state per environment (dev / staging / prod) without separate deploys. The active environment is resolved in this priority order:
+
+1. `FtrIO:Environment` in `appsettings.json`
+2. `ASPNETCORE_ENVIRONMENT` env var
+3. `DOTNET_ENVIRONMENT` env var
+
+When an environment is active, `ToggleParser` layers `appsettings.{env}.json` on top of the base file — env-specific values win, the base file fills the gaps. `ToggleProviderBuffer` writes provider updates to the env file, leaving the base file untouched.
+
+```
+appsettings.json              ← base / production defaults
+appsettings.Staging.json      ← staging overrides (only what differs)
+appsettings.Development.json  ← dev overrides
+```
+
+```json
+// appsettings.json
+{
+  "FtrIO": { "ReloadOnChange": true, "Environment": "Staging" },
+  "Toggles": { "SendWelcomeEmail": true, "NewCheckout": false }
+}
+
+// appsettings.Staging.json — only override what differs
+{
+  "Toggles": { "NewCheckout": "50%" }
+}
+```
+
+`[Toggle]`, `[ToggleAsync]`, and `ExecuteMethodIfToggleOn` call sites are unchanged — they see the merged view automatically.
+
+> **[Multi-environment docs →](https://TheScottBot.github.io/FtrIO/#environments)**
+
+---
+
 ## Reference
 
 | Topic | Link |

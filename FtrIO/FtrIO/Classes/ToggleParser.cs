@@ -16,22 +16,29 @@
 
             if (_configFileExists)
             {
-                var config = new ConfigurationBuilder()
+                // First pass: read FtrIO settings from the base file only.
+                var bootstrap = new ConfigurationBuilder()
                     .SetBasePath(basePath)
                     .AddJsonFile("appsettings.json", optional: true)
                     .Build();
 
-                var reloadOnChange = string.Equals(config["FtrIO:ReloadOnChange"], "true", StringComparison.OrdinalIgnoreCase);
+                var reloadOnChange = string.Equals(
+                    bootstrap["FtrIO:ReloadOnChange"], "true", StringComparison.OrdinalIgnoreCase);
 
-                if (reloadOnChange)
-                {
-                    config = new ConfigurationBuilder()
-                        .SetBasePath(basePath)
-                        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                        .Build();
-                }
+                var environment = bootstrap["FtrIO:Environment"]
+                    ?? System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                    ?? System.Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
 
-                _toggles = config.GetSection("Toggles");
+                // Second pass: build the live config with correct reload and env layer.
+                var builder = new ConfigurationBuilder()
+                    .SetBasePath(basePath)
+                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: reloadOnChange);
+
+                if (environment != null)
+                    builder.AddJsonFile(
+                        $"appsettings.{environment}.json", optional: true, reloadOnChange: reloadOnChange);
+
+                _toggles = builder.Build().GetSection("Toggles");
             }
         }
 
