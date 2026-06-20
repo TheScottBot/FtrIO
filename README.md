@@ -21,6 +21,34 @@ dotnet add package FtrIO
 - **appsettings.json as a read-through cache.** Other libraries make your app depend on an external flag service being online. FtrIO flips this: providers run in the background and write their state into `appsettings.json`; `ToggleParser` always reads from the file. If the remote source goes offline, the last known state is served automatically from disk — no fallback code, no circuit breaker, no stale-cache TTL to configure.
 - **Escape hatch built in.** The same `appsettings.json` you already deploy works as a fully functional toggle store without any provider. Swap from a static file to Azure App Config (or back) without touching a single call site.
 
+## The FtrIO ecosystem
+
+- **[FtrIO](https://github.com/TheScottBot/FtrIO)** — the core library. Weaves `[Toggle]` into your IL at compile time, reads state from `appsettings.json` at runtime, and optionally syncs from remote sources via the provider pipeline.
+- **[FtrIO.Toaster](https://github.com/TheScottBot/FtrIO.Toaster)** — a lightweight web UI for managing toggles live. Writes values through `ToggleProviderBuffer` so changes flush to `appsettings.json` and are picked up instantly via `ReloadOnChange` — no file editing, no restart.
+- **[ftrio-onetwo](https://github.com/TheScottBot/ftrio-onetwo)** — a .NET CLI audit tool. Scans your source tree for every toggle reference, cross-references against `appsettings.json`, and reports each toggle's state (ON / OFF / 20% / BLUE / MISSING) with file and line number.
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Your code                                          │
+│  [Toggle] public void SendWelcomeEmail() { ... }    │
+└───────────────────┬─────────────────────────────────┘
+                    │ compile-time weaving
+                    ▼
+┌─────────────────────────────────────────────────────┐
+│  FtrIO core                                         │
+│  gates method execution at runtime                  │
+└───────────────────┬─────────────────────────────────┘
+                    │ reads
+                    ▼
+┌─────────────────────────────────────────────────────┐
+│  appsettings.json  — source of truth                │
+└──────────┬──────────────────────────┬───────────────┘
+           │ writes live              │ reads & audits
+           ▼                          ▼
+  FtrIO.Toaster                 ftrio-onetwo
+  (web UI — manage toggles)     (CLI — audit state)
+```
+
 ## How it compares
 
 |  | **FtrIO** | LaunchDarkly | Microsoft.FeatureManagement | Flagsmith |
