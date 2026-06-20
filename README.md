@@ -1,7 +1,7 @@
 ![FtrIO](assets/ftrio-banner.png)
 
 [![NuGet](https://img.shields.io/nuget/v/FtrIO?color=ff69b4&logo=nuget)](https://www.nuget.org/packages/FtrIO)
-[![CI](https://github.com/TheScottBot/FtrIO/actions/workflows/dotnet.yml/badge.svg)](https://github.com/TheScottBot/FtrIO/actions)
+[![CI](https://github.com/FtrOnOff/FtrIO/actions/workflows/dotnet.yml/badge.svg)](https://github.com/FtrOnOff/FtrIO/actions)
 [![.NET](https://img.shields.io/badge/.NET-6--10-512BD4)](https://dotnet.microsoft.com)
 
 # FtrIO
@@ -18,9 +18,9 @@ Gate method execution from config — no `if` statements, no wrapper classes. De
 
 ## The FtrIO ecosystem
 
-- **[FtrIO](https://github.com/TheScottBot/FtrIO)** — the core library. Weaves `[Toggle]` into your IL at compile time, reads state from `appsettings.json` at runtime, and optionally syncs from remote sources via the provider pipeline.
-- **[FtrIO.Toaster](https://github.com/TheScottBot/FtrIO.Toaster)** — a lightweight web UI for managing toggles live. Writes values through `ToggleProviderBuffer` so changes flush to `appsettings.json` and are picked up instantly via `ReloadOnChange` — no file editing, no restart.
-- **[ftrio-onetwo](https://github.com/TheScottBot/ftrio-onetwo)** — a .NET CLI audit tool. Scans your source tree for every toggle reference, cross-references against `appsettings.json`, and reports each toggle's state (ON / OFF / 20% / BLUE / MISSING) with file and line number.
+- **[FtrIO](https://github.com/FtrOnOff/FtrIO)** — the core library. Weaves `[Toggle]` into your IL at compile time, reads state from `appsettings.json` at runtime, and optionally syncs from remote sources via the provider pipeline.
+- **[FtrIO.Toaster](https://github.com/FtrOnOff/FtrIO.Toaster)** — a lightweight web UI for managing toggles live. Writes values through `ToggleProviderBuffer` so changes flush to `appsettings.json` and are picked up instantly via `ReloadOnChange` — no file editing, no restart.
+- **[ftrio-onetwo](https://github.com/FtrOnOff/FtrIO.onetwo)** — a .NET CLI audit tool. Scans your source tree for every toggle reference, cross-references against `appsettings.json`, and reports each toggle's state (ON / OFF / 20% / BLUE / MISSING) with file and line number.
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -51,8 +51,8 @@ Gate method execution from config — no `if` statements, no wrapper classes. De
 | **Call-site syntax** | `[Toggle]` attribute, zero noise | SDK call at every site | `if (await _fm.IsEnabledAsync(...))` | SDK call at every site |
 | **Works offline** | ✅ always (file-backed) | ❌ needs SDK fallback config | ✅ | ❌ needs SDK fallback config |
 | **Compile-time validation** | ✅ Roslyn analyzer | ❌ | ❌ | ❌ |
-| **Codebase audit / drift detection** | ✅ [ftrio-onetwo](https://github.com/TheScottBot/ftrio-onetwo) CLI | ❌ | ❌ | ❌ |
-| **Management UI** | ✅ [Toaster](https://github.com/TheScottBot/FtrIO.Toaster), self-hosted | ✅ SaaS dashboard | ❌ | ✅ SaaS dashboard |
+| **Codebase audit / drift detection** | ✅ [ftrio-onetwo](https://github.com/FtrOnOff/FtrIO.onetwo) CLI | ❌ | ❌ | ❌ |
+| **Management UI** | ✅ [Toaster](https://github.com/FtrOnOff/FtrIO.Toaster), self-hosted | ✅ SaaS dashboard | ❌ | ✅ SaaS dashboard |
 | **Percentage rollout** | ✅ | ✅ | ✅ | ✅ |
 | **Self-hosted / no vendor** | ✅ | ❌ paid SaaS | ✅ | ✅ (or SaaS) |
 | **Cost** | Free, OSS | Paid SaaS | Free, OSS | Free tier / paid SaaS |
@@ -171,5 +171,5 @@ Each server needs only its own `appsettings.json` — prod, staging, and dev are
 | Exceptions — `ToggleDoesNotExistException` etc. | [docs/#exceptions](https://TheScottBot.github.io/FtrIO/#exceptions) |
 | Custom parser / Dependency Injection | [docs/#di](https://TheScottBot.github.io/FtrIO/#di) |
 | Manual control — `ExecuteMethodIfToggleOn` | [docs](https://TheScottBot.github.io/FtrIO/) |
-| Companion tooling — ftrio-onetwo | [github.com/TheScottBot/ftrio-onetwo](https://github.com/TheScottBot/ftrio-onetwo) |
-| Companion UI — FtrIO.Toaster | [github.com/TheScottBot/FtrIO.Toaster](https://github.com/TheScottBot/FtrIO.Toaster) |
+| Companion tooling — ftrio-onetwo | [github.com/FtrOnOff/FtrIO.onetwo](https://github.com/FtrOnOff/FtrIO.onetwo) |
+| Companion UI — FtrIO.Toaster | [github.com/FtrOnOff/FtrIO.Toaster](https://github.com/FtrOnOff/FtrIO.Toaster) |

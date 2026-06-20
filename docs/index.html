@@ -280,7 +280,7 @@
     <a href="#analyzer">Analyzer</a>
     <a href="#exceptions">Exceptions</a>
     <a href="#ecosystem">Ecosystem</a>
-    <a href="https://github.com/TheScottBot/FtrIO">GitHub</a>
+    <a href="https://github.com/FtrOnOff/FtrIO">GitHub</a>
     <a href="https://www.nuget.org/packages/FtrIO">NuGet</a>
   </div>
 </nav>
@@ -294,8 +294,8 @@
     <a href="https://www.nuget.org/packages/FtrIO">
       <img src="https://img.shields.io/nuget/v/FtrIO?color=ff69b4&logo=nuget" alt="NuGet version" />
     </a>
-    <a href="https://github.com/TheScottBot/FtrIO/actions">
-      <img src="https://github.com/TheScottBot/FtrIO/actions/workflows/dotnet.yml/badge.svg" alt="CI" />
+    <a href="https://github.com/FtrOnOff/FtrIO/actions">
+      <img src="https://github.com/FtrOnOff/FtrIO/actions/workflows/dotnet.yml/badge.svg" alt="CI" />
     </a>
     <img src="https://img.shields.io/badge/license-MIT-blue" alt="License" />
   </div>
@@ -307,7 +307,7 @@
 
   <div class="hero-ctas">
     <a class="btn btn-primary" href="#quickstart">Get started</a>
-    <a class="btn btn-secondary" href="https://github.com/TheScottBot/FtrIO">View on GitHub</a>
+    <a class="btn btn-secondary" href="https://github.com/FtrOnOff/FtrIO">View on GitHub</a>
   </div>
 </div>
 
@@ -1054,7 +1054,7 @@ FTRIO__Toggles__NewCheckout=50%</code></pre>
   <!-- TOASTER -->
   <section id="toaster">
     <h2><span class="icon">🍞</span> FtrIO.Toaster</h2>
-    <p><a href="https://github.com/TheScottBot/FtrIO.Toaster">FtrIO.Toaster</a> is a lightweight Docker-hosted web UI for managing FtrIO feature toggles. It lets you view, edit, add, and delete toggles without touching <code>appsettings.json</code> directly. Changes are written through <code>ToggleProviderBuffer</code> — the same flush pipeline your app uses — so updates land in <code>appsettings.json</code> on the next flush interval and are picked up live via <code>ReloadOnChange</code>.</p>
+    <p><a href="https://github.com/FtrOnOff/FtrIO.Toaster">FtrIO.Toaster</a> is a lightweight Docker-hosted web UI for managing FtrIO feature toggles. It lets you view, edit, add, and delete toggles without touching <code>appsettings.json</code> directly. Changes are written through <code>ToggleProviderBuffer</code> — the same flush pipeline your app uses — so updates land in <code>appsettings.json</code> on the next flush interval and are picked up live via <code>ReloadOnChange</code>.</p>
 
     <h3>Capabilities</h3>
     <ul style="color:var(--muted); padding-left:1.4rem; line-height:2.2; margin-bottom:1rem;">
@@ -1066,7 +1066,7 @@ FTRIO__Toggles__NewCheckout=50%</code></pre>
     </ul>
 
     <h3>Quick start</h3>
-    <pre><code>git clone https://github.com/TheScottBot/FtrIO.Toaster
+    <pre><code>git clone https://github.com/FtrOnOff/FtrIO.Toaster
 cd FtrIO.Toaster
 docker compose up -d</code></pre>
     <p>Then open <code>http://localhost:8000</code>.</p>
@@ -1113,7 +1113,7 @@ docker compose up -d</code></pre>
   <!-- FTRIO-ONETWO -->
   <section id="onetwo">
     <h2><span class="icon">1️⃣2️⃣</span> ftrio-onetwo</h2>
-    <p><a href="https://github.com/TheScottBot/ftrio-onetwo">ftrio-onetwo</a> is a .NET CLI audit tool. It walks your project's source tree, finds every FtrIO toggle reference, cross-references each against <code>appsettings.json</code>, and outputs a table showing the current state — file and line number included. Because FtrIO always resolves toggle state from <code>appsettings.json</code> at runtime, the tool gives you an instant at-a-glance view of exactly what is enabled or disabled right now without opening a single source file manually.</p>
+    <p><a href="https://github.com/FtrOnOff/FtrIO.onetwo">ftrio-onetwo</a> is a .NET CLI audit tool. It walks your project's source tree, finds every FtrIO toggle reference, cross-references each against <code>appsettings.json</code>, and outputs a table showing the current state — file and line number included. Because FtrIO always resolves toggle state from <code>appsettings.json</code> at runtime, the tool gives you an instant at-a-glance view of exactly what is enabled or disabled right now without opening a single source file manually.</p>
 
     <h3>Installation</h3>
     <pre><code>dotnet pack ./FtrIO.OneTwo
@@ -1221,9 +1221,9 @@ ftrio-onetwo --source C:\Projects\MyApp --config C:\Server\configs --env Product
 <footer>
   <p>
     Built by <a href="https://github.com/TheScottBot">TheScottBot</a> &nbsp;·&nbsp;
-    <a href="https://github.com/TheScottBot/FtrIO">GitHub</a> &nbsp;·&nbsp;
+    <a href="https://github.com/FtrOnOff/FtrIO">GitHub</a> &nbsp;·&nbsp;
     <a href="https://www.nuget.org/packages/FtrIO">NuGet</a> &nbsp;·&nbsp;
-    <a href="https://github.com/TheScottBot/FtrIO/blob/main/LICENSE">MIT License</a>
+    <a href="https://github.com/FtrOnOff/FtrIO/blob/main/LICENSE">MIT License</a>
   </p>
 </footer>
 
